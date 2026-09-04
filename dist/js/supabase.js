@@ -189,12 +189,11 @@ export async function fetchRoutesFromSupabase() {
 
   try {
     const user = await getCurrentUser();
-    let query = client.from('routes').select('*').order('date', { ascending: false });
-
-    // Se o usuário estiver autenticado, filtra estritamente pelas rotas dele
-    if (user && user.id) {
-      query = query.eq('user_id', user.id);
+    if (!user || !user.id) {
+      return [];
     }
+
+    let query = client.from('routes').select('*').order('date', { ascending: false }).eq('user_id', user.id);
 
     const { data, error } = await query;
     if (error) {

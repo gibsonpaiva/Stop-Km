@@ -137,8 +137,15 @@ export function calculateRouteMetrics(data) {
   // 6. Média de Densidade (Pacotes por Parada)
   const densityPerStop = numStops > 0 ? numPackages / numStops : 0;
 
-  // 7. Lucro Líquido Diário
+  // 7. Custo de Combustível por Km
+  const fuelCostPerKm = totalKm > 0 ? numFuel / totalKm : 0;
+
+  // 8. Lucro Líquido Diário
   const netProfit = grossEarnings - numFuel;
+
+  // 9. Ganhos por Hora Trabalhada
+  const hourlyGross = decimalHours > 0 ? grossEarnings / decimalHours : 0;
+  const hourlyNet = decimalHours > 0 ? netProfit / decimalHours : 0;
 
   return {
     date,
@@ -155,6 +162,9 @@ export function calculateRouteMetrics(data) {
     ratePerPackage,
     grossEarnings,
     netProfit,
+    fuelCostPerKm,
+    hourlyGross,
+    hourlyNet,
     totalMinutes,
     decimalHours,
     durationFormatted,

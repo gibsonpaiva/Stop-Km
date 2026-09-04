@@ -68,17 +68,6 @@ export function initUI() {
   updateAllViews();
   switchTab('tab-dashboard');
   setTimeout(updateNavIndicator, 80);
-
-  // Sincronização em nuvem automática e em segundo plano ao abrir o app
-  if (isSupabaseConfigured()) {
-    syncWithSupabase()
-      .then((res) => {
-        if (res.success) {
-          updateAllViews();
-        }
-      })
-      .catch((err) => console.warn('Sync inicial Supabase:', err));
-  }
 }
 
 export function triggerHaptic(type = 'light') {

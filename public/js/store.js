@@ -74,6 +74,9 @@ export function subscribe(callback) {
  */
 export function getRoutes() {
   try {
+    // Se o usuário não estiver autenticado, não expõe dados em tela
+    if (!currentUserId) return [];
+
     const raw = localStorage.getItem(getStorageKey());
     if (!raw) return [];
     const list = JSON.parse(raw);
@@ -93,10 +96,11 @@ export function getRoutes() {
 }
 
 /**
- * Salva a lista de rotas no LocalStorage.
+ * Salva a lista de rotas no LocalStorage vinculada ao usuário logado.
  * @param {Array<Object>} routes 
  */
 function saveRoutes(routes) {
+  if (!currentUserId) return;
   localStorage.setItem(getStorageKey(), JSON.stringify(routes));
   notifyListeners();
 }
@@ -545,6 +549,10 @@ export function reloadSampleData() {
 export async function syncWithSupabase() {
   if (!isSupabaseConfigured()) {
     return { success: false, count: 0, message: 'URL do Supabase não configurada.' };
+  }
+
+  if (!currentUserId) {
+    return { success: false, count: 0, message: 'Usuário não autenticado.' };
   }
 
   try {
