@@ -4,9 +4,9 @@
   "private": true,
   "description": "App PWA Mobile-First de controle de rotas para motoristas autônomos",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js",
-    "serve": "node server.js",
+    "dev": "node local-server.js",
+    "start": "node local-server.js",
+    "serve": "node local-server.js",
     "build": "echo 'Build complete'"
   },
   "dependencies": {

@@ -14,5 +14,5 @@ if exist "C:\Program Files\nodejs\node.exe" (
 
 echo [INFO] Iniciando servidor local StopKm...
 echo.
-"%NODE_CMD%" server.js
+"%NODE_CMD%" local-server.js
 pause
