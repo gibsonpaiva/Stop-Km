@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F1F38"/>
+      <stop offset="50%" stop-color="#091322"/>
+      <stop offset="100%" stop-color="#040810"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" stroke="#1E293B" stroke-width="4"/>
+
+  <!-- Subtle glow aura -->
+  <circle cx="256" cy="256" r="140" fill="#38BDF8" opacity="0.12" filter="url(#glow)"/>
+
+  <!-- Speedometer Arc & Lightning Path -->
+  <g transform="translate(256,256) scale(0.9)">
+    <!-- Outer Arc Track -->
+    <path d="M -150,60 A 170,170 0 1,1 150,60" fill="none" stroke="#1E293B" stroke-width="24" stroke-linecap="round"/>
+    
+    <!-- Active Arc Speedometer -->
+    <path d="M -150,60 A 170,170 0 1,1 90,-144" fill="none" stroke="url(#primaryGrad)" stroke-width="24" stroke-linecap="round" filter="url(#glow)"/>
+
+    <!-- Central Lightning Flash (Delivery Speed) -->
+    <path d="M 20,-110 L -40,10 L 10,10 L -20,110 L 60,-10 L 10,-10 Z" fill="url(#primaryGrad)"/>
+    
+    <!-- Accent Dot -->
+    <circle cx="90" cy="-144" r="14" fill="#38BDF8" filter="url(#glow)"/>
+  </g>
+</svg>

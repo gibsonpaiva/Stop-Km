@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0F2942">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StopKm">
+  
+  <title>StopKm - Controle de Entregas</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+  <link rel="apple-touch-icon" href="./assets/logo.svg">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            larqNavy: '#0F2942',
+            larqNavyDeep: '#0A1E32',
+            larqCyan: '#25A4DC',
+            larqIce: '#EEF4FA',
+            larqInput: '#E5EFF8',
+            larqMuted: '#64829E'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Bibliotecas externas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Estilos Customizados LARQ -->
+  <link rel="stylesheet" href="./css/custom.css">
+</head>
+
+<body class="antialiased">
+
+  <!-- Container de Toasts -->
+  <div id="toast-container"></div>
+
+  <!-- Viewport Principal da Aplicação (Responsivo: 100% no celular, layout amplo no desktop) -->
+  <div class="app-viewport">
+
+    <!-- Header Principal (Barra Web no PC, Barra App no Celular) -->
+    <header class="bg-[#0F2942] text-white shadow-md relative z-30">
+      
+      <!-- Barra Superior no Computador / Desktop (md:flex) -->
+      <div class="hidden md:flex max-w-6xl mx-auto px-6 py-3.5 items-center justify-between border-b border-white/10">
+        <!-- Logo e Identidade -->
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-2xl bg-white text-[#0F2942] flex items-center justify-center shadow font-black">
+            <svg class="w-5 h-5 text-[#0F2942]" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div>
+            <div class="text-lg font-extrabold tracking-tight text-white leading-tight">StopKm</div>
+            <div class="text-[10px] text-sky-200/80 font-medium">Controle Inteligente de Entregas</div>
+          </div>
+        </div>
+
+        <!-- Abas de Navegação Web Desktop -->
+        <nav class="flex items-center gap-1.5 bg-[#0A1E32]/80 p-1.5 rounded-2xl border border-white/10">
+          <button class="larq-nav-btn desktop-nav-tab" data-tab="tab-entry">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"/></svg>
+            <span>Lançar Rota</span>
+          </button>
+          <button class="larq-nav-btn desktop-nav-tab active" data-tab="tab-dashboard">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="larq-nav-btn desktop-nav-tab" data-tab="tab-history">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Histórico</span>
+          </button>
+          <button class="larq-nav-btn desktop-nav-tab" data-tab="tab-reports">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>Relatórios</span>
+          </button>
+        </nav>
+
+        <!-- Ações no Desktop (Configurações & Backup) -->
+        <div class="flex items-center gap-2">
+          <button id="btn-open-settings-desktop" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all">
+            <svg class="w-4 h-4 text-sky-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span>Configurações & Backup</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra Superior no Celular / Mobile (md:hidden) com Safe-Area para iPhone -->
+      <div class="md:hidden mobile-header-top px-5 flex items-center justify-between">
+        <div class="w-8"></div>
+
+        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          StopKm
+        </h1>
+
+        <button id="btn-open-settings" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Split Hero Cards (Resumo do Motorista - Adaptativo) -->
+      <div class="max-w-6xl mx-auto px-4 md:px-6 pb-5 pt-1 relative">
+        
+        <!-- Botão Circular Flutuante com Ícone Raio (Apenas Mobile) -->
+        <div class="md:hidden absolute left-1/2 -top-5 transform -translate-x-1/2 z-20">
+          <div class="larq-floating-badge shadow-lg">
+            <svg class="w-6 h-6 text-[#0F2942]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Grid dos Cards Principais -->
+        <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 pt-3 md:pt-4">
+          
+          <!-- Card 1 (Esquerda): Lucro da Semana -->
+          <div class="larq-card-white p-3.5 md:p-4 text-left">
+            <span class="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-slate-400 block">Lucro da Semana</span>
+            <div id="hero-week-profit" class="text-base md:text-xl font-extrabold text-[#0F2942] mt-0.5 tracking-tight">R$ 0,00</div>
+            <div class="text-[11px] md:text-xs text-[#25A4DC] font-semibold mt-1 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#25A4DC]"></span>
+              <span id="hero-week-gross">Fat: R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- Card 2 (Direita): Lucro do Mês -->
+          <div class="larq-card-cyan p-3.5 md:p-4 text-left flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-sky-100 block">Lucro do Mês</span>
+              <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+              </span>
+            </div>
+            <div id="hero-month-profit" class="text-base md:text-xl font-extrabold text-white mt-0.5 tracking-tight">R$ 0,00</div>
+            <div class="text-[11px] md:text-xs text-sky-100 font-semibold mt-1 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+              <span id="hero-month-gross">Fat: R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- Card 3 (Desktop): Status do Sistema -->
+          <div class="hidden lg:flex larq-card-white p-4 flex-col justify-between text-left">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Sincronização</span>
+            <div class="text-sm font-extrabold text-[#0F2942] mt-1 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Dados Locais & Ativos</span>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1 font-medium">PWA Offline First Disponível</div>
+          </div>
+
+          <!-- Card 4 (Desktop): Atalho Rápido -->
+          <div class="hidden lg:flex larq-card-white p-4 flex-col justify-between text-left">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Ambiente Web</span>
+            <div class="text-sm font-extrabold text-[#0F2942] mt-1 flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <span>Navegador do Computador</span>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1 font-medium">Layout Adaptativo Ativo</div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+
+    <!-- Área de Conteúdo Responsiva -->
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 md:px-6 py-5 md:py-8 space-y-6 pb-28 md:pb-12">
+
+      <!-- ====================================================================
+           ABA 1: LANÇAMENTO DIÁRIO (ENTRADA RÁPIDA)
+           ==================================================================== -->
+      <!-- ====================================================================
+           ABA 1: LANÇAMENTO DIÁRIO (ENTRADA RÁPIDA)
+           ==================================================================== -->
+      <section id="tab-entry" class="tab-pane space-y-5">
+        
+        <!-- Título da Seção -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 id="form-mode-title" class="text-lg md:text-2xl font-extrabold text-[#0F2942] tracking-tight">Lançamento de Rota</h2>
+            <p class="text-xs md:text-sm text-slate-500">Registre sua jornada diária com recálculo automático de ganhos</p>
+          </div>
+          <button id="btn-cancel-edit" class="hidden px-3.5 py-1.5 rounded-full bg-rose-100 text-rose-600 text-xs font-bold hover:bg-rose-200 transition-all">
+            Cancelar Edição
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- Formulário (Desktop: 7 colunas | Mobile: 2ª posição) -->
+          <div class="lg:col-span-7 order-2 lg:order-1 space-y-4">
+            <form id="route-form" class="larq-card-white p-5 md:p-6 space-y-4 shadow-sm">
+              
+              <!-- Data & Toggle de Domingo -->
+              <div class="min-w-0">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label for="input-date" class="text-xs md:text-sm font-bold text-[#0F2942]">Data da Rota</label>
+                  <span id="current-rate-indicator" class="text-xs font-bold text-[#25A4DC]">R$ 2,50/pct</span>
+                </div>
+                <div class="w-full min-w-0">
+                  <input type="date" id="input-date" required class="larq-input w-full min-w-0">
+                </div>
+
+                <!-- Switch de Domingo (+60%) -->
+                <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                  <div>
+                    <span class="text-xs md:text-sm font-bold text-[#0F2942] block">Taxa de Domingo (+60%)</span>
+                    <span id="sunday-rate-subtitle" class="text-[10px] md:text-xs text-slate-400">R$ 4,00 por pacote entregue</span>
+                  </div>
+                  <label class="larq-switch">
+                    <input type="checkbox" id="switch-sunday-rate">
+                    <span class="larq-slider"></span>
+                  </label>
+                </div>
+                <div id="sunday-rate-badge" class="hidden mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs items-center gap-2">
+                  <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                  <span>Domingo detectado! Bônus de +60% ativado.</span>
+                </div>
+              </div>
+
+              <!-- Horários (Saída & Término) -->
+              <div class="min-w-0">
+                <span class="text-xs md:text-sm font-bold text-[#0F2942] block mb-1.5">Horários em Rota</span>
+                <div class="grid grid-cols-2 gap-3 min-w-0">
+                  <div class="min-w-0">
+                    <label for="input-start-time" class="text-[10px] md:text-xs font-medium text-slate-400 block mb-1 truncate">Saída (Galpão)</label>
+                    <input type="time" id="input-start-time" required class="larq-input w-full min-w-0">
+                  </div>
+                  <div class="min-w-0">
+                    <label for="input-end-time" class="text-[10px] md:text-xs font-medium text-slate-400 block mb-1 truncate">Término</label>
+                    <input type="time" id="input-end-time" required class="larq-input w-full min-w-0">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Odômetro (Km Inicial & Km Final) -->
+              <div class="min-w-0">
+                <span class="text-xs md:text-sm font-bold text-[#0F2942] block mb-1.5">Odômetro do Veículo</span>
+                <div class="grid grid-cols-2 gap-3 min-w-0">
+                  <div class="min-w-0">
+                    <label for="input-start-km" class="text-[10px] md:text-xs font-medium text-slate-400 block mb-1">Km Inicial</label>
+                    <input type="number" id="input-start-km" inputmode="decimal" step="any" placeholder="Ex: 45120" required class="larq-input w-full min-w-0">
+                  </div>
+                  <div class="min-w-0">
+                    <label for="input-end-km" class="text-[10px] md:text-xs font-medium text-slate-400 block mb-1">Km Final</label>
+                    <input type="number" id="input-end-km" inputmode="decimal" step="any" placeholder="Ex: 45210" required class="larq-input w-full min-w-0">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Paradas & Pacotes Entregues -->
+              <div class="min-w-0">
+                <span class="text-xs md:text-sm font-bold text-[#0F2942] block mb-1.5">Entregas Realizadas</span>
+                <div class="grid grid-cols-2 gap-3 min-w-0">
+                  <div class="min-w-0">
+                    <label for="input-stops" class="text-[10px] md:text-xs font-medium text-slate-400 block mb-1">Qtd. Paradas</label>
+                    <input type="number" id="input-stops" inputmode="numeric" min="0" placeholder="Ex: 75" required class="larq-input w-full min-w-0">
+                  </div>
+                  <div class="min-w-0">
+                    <label for="input-packages" class="text-[10px] md:text-xs font-medium text-slate-400 block mb-1">Qtd. Pacotes</label>
+                    <input type="number" id="input-packages" inputmode="numeric" min="0" placeholder="Ex: 120" required class="larq-input w-full min-w-0">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Combustível Gasto (R$) -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="input-fuel" class="text-xs md:text-sm font-bold text-[#0F2942]">Combustível do Dia (R$)</label>
+                  <span class="text-[10px] md:text-xs text-slate-400">Opcional</span>
+                </div>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-3 text-xs md:text-sm font-bold text-slate-400">R$</span>
+                  <input type="number" id="input-fuel" inputmode="decimal" step="any" placeholder="0,00" class="larq-input pl-10">
+                </div>
+              </div>
+
+              <!-- Botão Salvar Estilo LARQ -->
+              <button type="submit" id="btn-submit-route" class="larq-btn-primary mt-2">
+                <span id="btn-submit-text">Salvar Rota</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </button>
+
+            </form>
+          </div>
+
+          <!-- Resumo / Totais Previstos (Desktop: 5 colunas sticky | Mobile: 1ª posição) -->
+          <div class="lg:col-span-5 order-1 lg:order-2 lg:sticky lg:top-24 space-y-4">
+            <div class="larq-card-white p-5 md:p-6 shadow-sm space-y-4">
+              
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <span class="text-xs md:text-sm font-bold text-[#0F2942] flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#25A4DC] animate-pulse"></span>
+                  Totais do Dia
+                </span>
+                <span id="preview-rate-tag" class="text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full bg-[#E5EFF8] text-[#0F2942]">
+                  R$ 2,50/pct
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 py-2">
+                <div>
+                  <span class="text-[10px] md:text-xs font-medium text-slate-400 block">Faturamento do Dia</span>
+                  <div id="preview-gross-earnings" class="text-lg md:text-2xl font-extrabold text-[#0F2942]">R$ 0,00</div>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] md:text-xs font-medium text-slate-400 block">Lucro Líquido do Dia</span>
+                  <div id="preview-net-profit" class="text-lg md:text-2xl font-extrabold text-[#10B981]">R$ 0,00</div>
+                </div>
+              </div>
+
+              <!-- 4 Mini Indicadores -->
+              <div class="grid grid-cols-4 gap-2 pt-3 border-t border-slate-100 text-center">
+                <div class="bg-[#EEF4FA] rounded-xl p-2">
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">Km Total</span>
+                  <span id="preview-total-km" class="text-xs md:text-sm font-bold text-[#0F2942] block mt-0.5">0 km</span>
+                </div>
+                <div class="bg-[#EEF4FA] rounded-xl p-2">
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">Tempo</span>
+                  <span id="preview-total-time" class="text-xs md:text-sm font-bold text-[#0F2942] block mt-0.5">0h 00m</span>
+                </div>
+                <div class="bg-[#EEF4FA] rounded-xl p-2">
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">R$/Km</span>
+                  <span id="preview-efficiency" class="text-xs md:text-sm font-bold text-[#25A4DC] block mt-0.5">R$ 0,00</span>
+                </div>
+                <div class="bg-[#EEF4FA] rounded-xl p-2">
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">Densidade</span>
+                  <span id="preview-density" class="text-xs md:text-sm font-bold text-[#0F2942] block mt-0.5">0 pct</span>
+                </div>
+              </div>
+
+              <!-- Dica Operacional no Desktop -->
+              <div class="hidden lg:block pt-3 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed">
+                💡 <span class="font-semibold text-slate-700">Dica:</span> Ao preencher os odômetros e horários, o StopKm calcula o rendimento e a velocidade média em tempo real.
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           ABA 2: DASHBOARD (VISÃO GERAL & GRÁFICOS)
+           ==================================================================== -->
+      <section id="tab-dashboard" class="tab-pane active space-y-6">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg md:text-2xl font-extrabold text-[#0F2942] tracking-tight">Dashboard de Resultados</h2>
+            <p class="text-xs md:text-sm text-slate-500">Métricas operacionais e consolidação financeira</p>
+          </div>
+          
+          <!-- Segmented Control de Período -->
+          <div class="larq-segmented sm:w-auto self-stretch">
+            <div class="larq-segmented-item active dashboard-filter-btn" data-filter="today">Hoje</div>
+            <div class="larq-segmented-item dashboard-filter-btn" data-filter="this_week">Esta Semana</div>
+            <div class="larq-segmented-item dashboard-filter-btn" data-filter="this_month">Mês Atual</div>
+            <div class="larq-segmented-item dashboard-filter-btn" data-filter="all">Geral</div>
+          </div>
+        </div>
+
+        <!-- Seção: 4 KPIs Principais -->
+        <div>
+          <h3 class="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Desempenho Geral</h3>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            
+            <!-- Km Rodados -->
+            <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm">
+              <div class="w-10 h-10 rounded-2xl bg-[#0F2942] text-white flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+              </div>
+              <div>
+                <span class="text-[10px] md:text-xs text-slate-400 font-medium block">Km Rodados</span>
+                <div id="kpi-total-km" class="text-sm md:text-lg font-extrabold text-[#0F2942]">0 km</div>
+              </div>
+            </div>
+
+            <!-- Pacotes Entregues -->
+            <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm">
+              <div class="w-10 h-10 rounded-2xl bg-[#0F2942] text-white flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              </div>
+              <div>
+                <span class="text-[10px] md:text-xs text-slate-400 font-medium block">Pacotes</span>
+                <div id="kpi-total-packages" class="text-sm md:text-lg font-extrabold text-[#0F2942]">0 un</div>
+              </div>
+            </div>
+
+            <!-- Eficiência R$/Km -->
+            <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm">
+              <div class="w-10 h-10 rounded-2xl bg-[#0F2942] text-white flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div>
+                <span class="text-[10px] md:text-xs text-slate-400 font-medium block">Eficiência</span>
+                <div id="kpi-efficiency-km" class="text-sm md:text-lg font-extrabold text-[#25A4DC]">R$ 0,00/km</div>
+              </div>
+            </div>
+
+            <!-- Combustível Gasto -->
+            <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm">
+              <div class="w-10 h-10 rounded-2xl bg-[#0F2942] text-white flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              </div>
+              <div>
+                <span class="text-[10px] md:text-xs text-slate-400 font-medium block">Combustível</span>
+                <div id="kpi-fuel-total" class="text-sm md:text-lg font-extrabold text-[#0F2942]">R$ 0,00</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Seção: Gráficos 1 e 2 Lado a Lado no Computador -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Gráfico 1: Evolução Faturamento -->
+          <div class="space-y-2">
+            <h3 class="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500">Evolução do Faturamento</h3>
+            <div class="larq-card-white p-5 shadow-sm flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <span class="text-[10px] md:text-xs text-slate-400 font-medium block">Faturamento Consolidado</span>
+                  <div id="kpi-gross-revenue" class="text-base md:text-xl font-extrabold text-[#0F2942]">R$ 0,00</div>
+                </div>
+                <span id="kpi-days-count" class="text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full bg-[#E5EFF8] text-[#0F2942]">
+                  0 dias em rota
+                </span>
+              </div>
+              <div class="w-full h-56 md:h-64 relative">
+                <canvas id="chart-earnings-evolution"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gráfico 2: Km vs Pacotes -->
+          <div class="space-y-2">
+            <h3 class="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500">Km Rodados vs Pacotes Entregues</h3>
+            <div class="larq-card-white p-5 shadow-sm flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <span class="text-[10px] md:text-xs text-slate-400 font-medium block">Relação Operacional</span>
+                  <div class="text-xs md:text-sm font-bold text-slate-700">Densidade de Entregas</div>
+                </div>
+              </div>
+              <div class="w-full h-56 md:h-64 relative">
+                <canvas id="chart-km-vs-packages"></canvas>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           ABA 3: HISTÓRICO COMPLETO (GESTÃO DE DADOS)
+           ==================================================================== -->
+      <section id="tab-history" class="tab-pane space-y-5">
+        
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg md:text-2xl font-extrabold text-[#0F2942] tracking-tight">Histórico de Rotas</h2>
+            <p class="text-xs md:text-sm text-slate-500">Registros em ordem cronológica decrescente</p>
+          </div>
+          <span id="history-count-badge" class="px-3 py-1 rounded-full bg-[#E5EFF8] text-[#0F2942] text-xs font-bold">
+            0 rotas
+          </span>
+        </div>
+
+        <!-- Container da Lista de Rotas em Grid Responsivo -->
+        <div id="history-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Renderizado via ui.js -->
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           ABA 4: RELATÓRIOS & EXPORTAR COMPROVANTE (RECEIPT VIEW)
+           ==================================================================== -->
+      <section id="tab-reports" class="tab-pane space-y-5">
+        
+        <div>
+          <h2 class="text-lg md:text-2xl font-extrabold text-[#0F2942] tracking-tight">Comprovante de Rotas</h2>
+          <p class="text-xs md:text-sm text-slate-500">Gere e baixe seu relatório consolidado em imagem HD</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- Controles de Período e Ações (Desktop: 5 colunas) -->
+          <div class="lg:col-span-5 space-y-4">
+            
+            <div class="larq-card-white p-5 space-y-4 shadow-sm">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Filtro de Período</span>
+              
+              <!-- Filtro de Período -->
+              <div class="larq-segmented">
+                <div class="larq-segmented-item active receipt-filter-btn" data-filter="today">Hoje</div>
+                <div class="larq-segmented-item receipt-filter-btn" data-filter="this_week">Esta Semana</div>
+                <div class="larq-segmented-item receipt-filter-btn" data-filter="this_month">Mês Atual</div>
+                <div class="larq-segmented-item receipt-filter-btn" data-filter="last_month">Mês Anterior</div>
+                <div class="larq-segmented-item receipt-filter-btn" data-filter="custom">Outro</div>
+              </div>
+
+              <!-- Datas Customizadas -->
+              <div id="receipt-custom-dates" class="hidden bg-[#EEF4FA] rounded-2xl p-3">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label for="receipt-start-date" class="text-[10px] text-slate-400 font-semibold block mb-1">Início</label>
+                    <input type="date" id="receipt-start-date" class="larq-input text-xs py-2 bg-white">
+                  </div>
+                  <div>
+                    <label for="receipt-end-date" class="text-[10px] text-slate-400 font-semibold block mb-1">Fim</label>
+                    <input type="date" id="receipt-end-date" class="larq-input text-xs py-2 bg-white">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botões de Ação -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <button id="btn-download-receipt-png" class="larq-btn-primary py-3.5 text-xs flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  <span>Baixar PNG</span>
+                </button>
+
+                <button id="btn-share-receipt" class="larq-btn-cyan py-3.5 text-xs flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                  <span>Compartilhar</span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Card do Comprovante Estilizado (Desktop: 7 colunas) -->
+          <div class="lg:col-span-7 flex justify-center">
+            <div id="receipt-card-container" class="w-full max-w-md shadow-xl rounded-3xl">
+              <!-- Renderizado via receipt.js -->
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- ====================================================================
+         BOTTOM NAVIGATION BAR (Exclusiva para Celular / Estilo Cápsula Instagram)
+         ==================================================================== -->
+    <nav class="larq-bottom-bar fixed md:hidden z-40 flex items-center justify-around" aria-label="Navegação Principal">
+      
+      <!-- Indicador Deslizante Suave (Efeito Cápsula Animada) -->
+      <div id="nav-indicator-bubble" class="nav-indicator-bubble"></div>
+
+      <!-- Lançar -->
+      <button class="larq-nav-btn" data-tab="tab-entry" aria-label="Lançar Rota" title="Lançar Rota">
+        <div class="nav-icon-pill">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"/>
+          </svg>
+        </div>
+      </button>
+
+      <!-- Dashboard -->
+      <button class="larq-nav-btn active" data-tab="tab-dashboard" aria-label="Dashboard" title="Dashboard">
+        <div class="nav-icon-pill">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+      </button>
+
+      <!-- Histórico -->
+      <button class="larq-nav-btn" data-tab="tab-history" aria-label="Histórico" title="Histórico">
+        <div class="nav-icon-pill">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </button>
+
+      <!-- Relatórios -->
+      <button class="larq-nav-btn" data-tab="tab-reports" aria-label="Relatórios" title="Relatórios">
+        <div class="nav-icon-pill">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+      </button>
+
+    </nav>
+
+  </div>
+
+  <!-- Modal de Confirmação de Exclusão -->
+  <div id="modal-confirm-delete" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="w-full max-w-xs larq-card-white p-5 text-center space-y-3 shadow-2xl">
+      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 mx-auto flex items-center justify-center">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </div>
+      <h3 class="text-base font-bold text-[#0F2942]">Excluir Rota?</h3>
+      <p class="text-xs text-slate-500">Essa rota será removida e os relatórios serão recalculados.</p>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button id="btn-cancel-delete" class="py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancelar</button>
+        <button id="btn-confirm-delete" class="py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs">Sim, Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Configurações & Backup -->
+  <div id="modal-settings" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="w-full max-w-sm larq-card-white p-5 space-y-4 shadow-2xl">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-sm font-bold text-[#0F2942]">Configurações & Backup</h3>
+        <button id="btn-close-settings" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <!-- Configuração das Regras de Remuneração -->
+      <div class="p-3.5 rounded-2xl bg-[#EEF4FA] text-xs space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[#25A4DC] block">Regras de Remuneração</span>
+          <span class="text-[9px] text-slate-400 font-semibold">(Novos Lançamentos)</span>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-2.5 pt-0.5">
+          <div>
+            <label for="setting-base-rate" class="text-[10px] text-slate-500 font-bold block mb-1">Seg. a Sáb. (R$)</label>
+            <div class="relative">
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+              <input type="number" step="0.05" min="0.10" id="setting-base-rate" class="w-full pl-8 pr-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-[#0F2942] bg-white focus:outline-none focus:border-[#25A4DC] shadow-sm">
+            </div>
+          </div>
+          <div>
+            <label for="setting-sunday-rate" class="text-[10px] text-slate-500 font-bold block mb-1">Domingos (R$)</label>
+            <div class="relative">
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+              <input type="number" step="0.05" min="0.10" id="setting-sunday-rate" class="w-full pl-8 pr-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-amber-600 bg-white focus:outline-none focus:border-[#25A4DC] shadow-sm">
+            </div>
+          </div>
+        </div>
+
+        <p class="text-[10px] text-slate-500 leading-tight">
+          💡 Os novos valores serão aplicados a partir da próxima rota. Rotas anteriores mantêm os valores originais intactos.
+        </p>
+
+        <button id="btn-save-rates" class="w-full py-2 rounded-xl bg-[#0F2942] hover:bg-[#1C8EC0] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+          <svg class="w-3.5 h-3.5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          Salvar Regras de Remuneração
+        </button>
+      </div>
+
+      <!-- Sincronização em Nuvem (Supabase) -->
+      <div class="p-3.5 rounded-2xl bg-[#EEF4FA] text-xs space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[#25A4DC] block">Sincronização em Nuvem</span>
+          <span id="supabase-status-badge" class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">🟢 Conectado</span>
+        </div>
+
+        <button id="btn-sync-supabase" class="w-full py-2.5 px-3 rounded-xl bg-[#25A4DC] hover:bg-[#1C8EC0] text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-sm">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          Sincronizar com a Nuvem
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Backup de Dados</span>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-export-backup" class="p-2.5 rounded-xl bg-[#0F2942] text-white text-xs font-bold flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Exportar JSON
+          </button>
+          
+          <button id="btn-import-backup" class="p-2.5 rounded-xl bg-[#E5EFF8] text-[#0F2942] text-xs font-bold flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+            Importar JSON
+          </button>
+          <input type="file" id="file-import-input" accept=".json" class="hidden">
+        </div>
+
+        <button id="btn-reset-sample-data" class="w-full p-2.5 rounded-xl bg-[#EEF4FA] text-slate-600 text-xs font-bold flex items-center justify-center gap-1.5 mt-2">
+          🔄 Recarregar Dados de Exemplo
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const openSettings = () => {
+      document.getElementById('modal-settings')?.classList.remove('hidden');
+      document.getElementById('modal-settings')?.classList.add('flex');
+    };
+    document.getElementById('btn-open-settings')?.addEventListener('click', openSettings);
+    document.getElementById('btn-open-settings-desktop')?.addEventListener('click', openSettings);
+    document.getElementById('btn-close-settings')?.addEventListener('click', () => {
+      document.getElementById('modal-settings')?.classList.add('hidden');
+      document.getElementById('modal-settings')?.classList.remove('flex');
+    });
+  </script>
+
+  <!-- Script Principal -->
+  <script type="module" src="./js/app.js"></script>
+
+</body>
+</html>
