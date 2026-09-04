@@ -2,12 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const rootDir = __dirname;
-const outDir = path.join(rootDir, 'dist');
-
-if (fs.existsSync(outDir)) {
-  fs.rmSync(outDir, { recursive: true, force: true });
-}
-fs.mkdirSync(outDir, { recursive: true });
+const distDir = path.join(rootDir, 'dist');
+const publicDir = path.join(rootDir, 'public');
 
 function copyRecursive(src, dest) {
   const stat = fs.statSync(src);
@@ -21,20 +17,31 @@ function copyRecursive(src, dest) {
   }
 }
 
-// Arquivos raiz
-['index.html', 'manifest.json', 'sw.js'].forEach(file => {
-  const src = path.join(rootDir, file);
-  if (fs.existsSync(src)) {
-    fs.copyFileSync(src, path.join(outDir, file));
+function buildTarget(outDir) {
+  if (fs.existsSync(outDir)) {
+    fs.rmSync(outDir, { recursive: true, force: true });
   }
-});
+  fs.mkdirSync(outDir, { recursive: true });
 
-// Pastas de assets, css e js
-['css', 'js', 'assets'].forEach(dir => {
-  const src = path.join(rootDir, dir);
-  if (fs.existsSync(src)) {
-    copyRecursive(src, path.join(outDir, dir));
-  }
-});
+  // Arquivos raiz
+  ['index.html', 'manifest.json', 'sw.js'].forEach(file => {
+    const src = path.join(rootDir, file);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, path.join(outDir, file));
+    }
+  });
 
-console.log('Build StopKm concluído com sucesso em dist/');
+  // Pastas de assets, css e js
+  ['css', 'js', 'assets'].forEach(dir => {
+    const src = path.join(rootDir, dir);
+    if (fs.existsSync(src)) {
+      copyRecursive(src, path.join(outDir, dir));
+    }
+  });
+}
+
+// Constrói em dist/ e public/
+buildTarget(distDir);
+buildTarget(publicDir);
+
+console.log('Build StopKm concluído com sucesso em dist/ e public/');

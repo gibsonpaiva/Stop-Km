@@ -1,0 +1,501 @@
+/* ==========================================================================
+   StopKm - Design System Exclusivo LARQ
+   Cores exatas: Deep Navy (#0F2942), Ice Blue (#EEF4FA), Cyan (#25A4DC),
+   Pure White (#FFFFFF), Soft Input Blue (#E5EFF8)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root {
+  --navy-dark: #0F2942;
+  --navy-deep: #0B1F33;
+  --navy-hero: #132E4A;
+  --cyan-primary: #25A4DC;
+  --cyan-light: #E0F2FE;
+  --cyan-glow: rgba(37, 164, 220, 0.35);
+  --ice-bg: #EEF4FA;
+  --ice-surface: #F5F9FD;
+  --white: #FFFFFF;
+  --input-bg: #E5EFF8;
+  --input-border: #D8E5F2;
+  --text-navy: #0F2942;
+  --text-muted: #64829E;
+  --text-light: #8CA3B8;
+  --emerald: #10B981;
+  --amber: #F59E0B;
+  --rose: #EF4444;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: #EEF4FA;
+  color: var(--text-navy);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  touch-action: manipulation;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   App Viewport (Responsivo: 100% no Celular com cara de App, Amplo no Desktop)
+   -------------------------------------------------------------------------- */
+.app-viewport, .phone-viewport {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  background-color: var(--ice-bg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  html, body {
+    background-color: #F0F4F8;
+    padding: 0;
+  }
+  .app-viewport, .phone-viewport {
+    max-width: 100%;
+    min-height: 100vh;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   LARQ Cards & Containers
+   -------------------------------------------------------------------------- */
+.larq-card-white {
+  background-color: var(--white);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(15, 41, 66, 0.05), 0 1px 3px rgba(15, 41, 66, 0.02);
+  border: 1px solid rgba(220, 232, 244, 0.6);
+}
+
+.larq-card-cyan {
+  background: linear-gradient(135deg, #25A4DC 0%, #1E8FC2 100%);
+  border-radius: 24px;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px rgba(37, 164, 220, 0.28);
+}
+
+.larq-card-navy {
+  background: linear-gradient(135deg, #0F2942 0%, #0A1E32 100%);
+  border-radius: 24px;
+  color: #FFFFFF;
+  box-shadow: 0 12px 30px rgba(15, 41, 66, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   LARQ Inputs (Fundo azul suave sem borda grossa)
+   -------------------------------------------------------------------------- */
+.larq-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background-color: var(--input-bg);
+  border: 1.5px solid transparent;
+  border-radius: 16px;
+  color: var(--text-navy);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 12px 14px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.larq-input:focus {
+  outline: none;
+  background-color: #FFFFFF;
+  border-color: var(--cyan-primary);
+  box-shadow: 0 0 0 4px var(--cyan-glow);
+}
+
+.larq-input::placeholder {
+  color: #8DA5BA;
+  font-weight: 500;
+}
+
+/* Correções específicas para inputs nativos de Date e Time no WebKit (iOS Safari) */
+input[type="date"].larq-input,
+input[type="time"].larq-input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+input[type="date"].larq-input::-webkit-date-and-time-value,
+input[type="time"].larq-input::-webkit-date-and-time-value {
+  text-align: left;
+  padding: 0;
+  margin: 0;
+  line-height: 1.4;
+  min-height: 1.4em;
+}
+
+.larq-input::placeholder {
+  color: #8DA5BA;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   LARQ Buttons
+   -------------------------------------------------------------------------- */
+.larq-btn-primary {
+  background-color: var(--navy-dark);
+  color: #FFFFFF;
+  border-radius: 20px;
+  font-weight: 700;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(15, 41, 66, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.larq-btn-primary:active {
+  transform: scale(0.97);
+  background-color: #0B1F33;
+}
+
+.larq-btn-cyan {
+  background: linear-gradient(135deg, #25A4DC 0%, #1C8EC0 100%);
+  color: #FFFFFF;
+  border-radius: 20px;
+  font-weight: 700;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 8px 20px rgba(37, 164, 220, 0.3);
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}
+.larq-btn-cyan:active {
+  transform: scale(0.97);
+}
+
+/* --------------------------------------------------------------------------
+   LARQ Floating Logo Button (Botão circular flutuante central com glow cyan)
+   -------------------------------------------------------------------------- */
+.larq-floating-badge {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  color: var(--navy-dark);
+  box-shadow: 0 0 0 6px rgba(37, 164, 220, 0.3), 0 10px 20px rgba(15, 41, 66, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 24px;
+  z-index: 20;
+}
+
+/* --------------------------------------------------------------------------
+   LARQ Segmented Controls
+   -------------------------------------------------------------------------- */
+.larq-segmented {
+  background-color: #E2ECF5;
+  border-radius: 16px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+.larq-segmented-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.larq-segmented-item.active {
+  background-color: #FFFFFF;
+  color: var(--navy-dark);
+  box-shadow: 0 3px 10px rgba(15, 41, 66, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   LARQ Toggle Switch
+   -------------------------------------------------------------------------- */
+.larq-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+}
+
+.larq-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.larq-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #D3E2F0;
+  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 34px;
+}
+
+.larq-slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(15, 41, 66, 0.2);
+}
+
+input:checked + .larq-slider {
+  background-color: var(--cyan-primary);
+}
+
+input:checked + .larq-slider:before {
+  transform: translateX(20px);
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Safe Area Spacers (iPhone Notch, Dynamic Island e Home Indicator)
+   -------------------------------------------------------------------------- */
+.mobile-header-top {
+  padding-top: max(calc(env(safe-area-inset-top, 0px) + 14px), 56px);
+  padding-bottom: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Floating Navigation Bar (Estilo Cápsula Instagram / Glassmorphism)
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .larq-bottom-bar {
+    position: fixed;
+    bottom: max(18px, env(safe-area-inset-bottom, 18px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 36px);
+    max-width: 380px;
+    height: 60px;
+    background: rgba(18, 26, 38, 0.52);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    border-radius: 9999px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.30), 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 40;
+  }
+}
+
+@media (min-width: 768px) {
+  .larq-bottom-bar {
+    display: none !important;
+  }
+}
+
+/* Indicador deslizante elástico (Sliding Capsule) */
+.nav-indicator-bubble {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 54px;
+  height: 42px;
+  margin-top: -21px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transform: translateX(0);
+  transition: transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+}
+
+.larq-nav-btn {
+  position: relative;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.65);
+  transition: color 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.larq-nav-btn:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.larq-nav-btn .nav-icon-pill {
+  width: 54px;
+  height: 42px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Micro-interação tátil ao pressionar o botão */
+.larq-nav-btn:active .nav-icon-pill {
+  transform: scale(0.85);
+}
+
+.larq-nav-btn.active {
+  color: #FFFFFF;
+}
+
+/* Animação de pop/bounce elástico no ícone ativo */
+@keyframes navIconBounce {
+  0% { transform: scale(0.82); }
+  50% { transform: scale(1.18); }
+  80% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+.larq-nav-btn.active svg {
+  animation: navIconBounce 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* --------------------------------------------------------------------------
+   Desktop Navigation Tabs (Barra Superior Web no Computador)
+   -------------------------------------------------------------------------- */
+.desktop-nav-tab {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px;
+  padding: 8px 18px !important;
+  border-radius: 12px;
+  color: #94A3B8 !important;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: initial !important;
+}
+
+.desktop-nav-tab:hover {
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.desktop-nav-tab.active {
+  color: #FFFFFF !important;
+  background-color: #25A4DC !important;
+  box-shadow: 0 4px 14px rgba(37, 164, 220, 0.35);
+}
+
+.desktop-nav-tab.active svg {
+  color: #FFFFFF !important;
+}
+
+/* --------------------------------------------------------------------------
+   Abas e Transições
+   -------------------------------------------------------------------------- */
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+  animation: tabFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* --------------------------------------------------------------------------
+   Toasts LARQ
+   -------------------------------------------------------------------------- */
+#toast-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: calc(100% - 40px);
+  max-width: 380px;
+  pointer-events: none;
+}
+
+.larq-toast {
+  pointer-events: auto;
+  margin-bottom: 8px;
+  padding: 14px 18px;
+  border-radius: 20px;
+  background-color: var(--navy-dark);
+  color: #FFFFFF;
+  box-shadow: 0 15px 35px rgba(15, 41, 66, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-16px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Scrollbar invisível */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
