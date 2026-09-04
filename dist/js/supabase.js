@@ -400,9 +400,11 @@ export async function signUpWithEmail(email, password) {
     if (error) {
       let friendlyMessage = error.message;
       if (error.message.includes('User already registered')) {
-        friendlyMessage = 'Este e-mail já está cadastrado. Tente fazer login.';
+        friendlyMessage = 'Este e-mail já está cadastrado. Tente fazer login na aba "Entrar".';
       } else if (error.message.includes('Password should be at least')) {
         friendlyMessage = 'A senha deve ter no mínimo 6 caracteres.';
+      } else if (error.message.toLowerCase().includes('rate limit')) {
+        friendlyMessage = 'Limite de envio de e-mails do Supabase atingido. Desmarque a opção "Confirm email" no painel do Supabase para permitir cadastro instantâneo.';
       }
       return { success: false, error: friendlyMessage };
     }
