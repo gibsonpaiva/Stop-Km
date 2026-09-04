@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "serve": "node server.js"
+    "serve": "node server.js",
+    "build": "echo 'Build complete'"
   },
   "dependencies": {
     "qrcode-terminal": "^0.12.0"

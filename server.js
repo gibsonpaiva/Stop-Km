@@ -32,6 +32,19 @@ const server = http.createServer((req, res) => {
     safeUrl = '/index.html';
   }
 
+  // Endpoint de configuração de ambiente (compatível com Vercel)
+  if (safeUrl === '/api/config' || safeUrl === '/api/config.js') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(JSON.stringify({
+      supabaseUrl: process.env.SUPABASE_URL || 'https://eugkvjulxnyvywxhmchv.supabase.co',
+      supabaseKey: process.env.SUPABASE_ANON_KEY || 'sb_publishable_WSmgvbj4N7q_EBEb054IIA_DSYE6bRj'
+    }));
+    return;
+  }
+
   const filePath = path.join(__dirname, safeUrl);
 
   // Segurança de diretório
