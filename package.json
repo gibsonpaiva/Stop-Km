@@ -2,14 +2,5 @@
   "name": "stopkm",
   "version": "2.0.0",
   "private": true,
-  "description": "App PWA Mobile-First de controle de rotas para motoristas autônomos",
-  "scripts": {
-    "dev": "node local-server.js",
-    "start": "node local-server.js",
-    "serve": "node local-server.js",
-    "build": "echo 'Build complete'"
-  },
-  "dependencies": {
-    "qrcode-terminal": "^0.12.0"
-  }
+  "description": "App PWA Mobile-First de controle de rotas para motoristas autônomos"
 }

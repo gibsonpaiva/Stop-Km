@@ -36,8 +36,7 @@ import {
   getSupabaseConfig,
   setSupabaseConfig,
   testSupabaseConnection,
-  isSupabaseConfigured,
-  initSupabaseFromRemoteConfig
+  isSupabaseConfigured
 } from './supabase.js';
 
 import { renderDashboardCharts } from './charts.js';
@@ -63,17 +62,15 @@ export function initUI() {
   setTimeout(updateNavIndicator, 80);
 
   // Sincronização em nuvem automática e em segundo plano ao abrir o app
-  initSupabaseFromRemoteConfig().finally(() => {
-    if (isSupabaseConfigured()) {
-      syncWithSupabase()
-        .then((res) => {
-          if (res.success) {
-            updateAllViews();
-          }
-        })
-        .catch((err) => console.warn('Sync inicial Supabase:', err));
-    }
-  });
+  if (isSupabaseConfigured()) {
+    syncWithSupabase()
+      .then((res) => {
+        if (res.success) {
+          updateAllViews();
+        }
+      })
+      .catch((err) => console.warn('Sync inicial Supabase:', err));
+  }
 }
 
 export function triggerHaptic(type = 'light') {

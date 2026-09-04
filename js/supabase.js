@@ -58,27 +58,6 @@ export function isSupabaseConfigured() {
 }
 
 /**
- * Carrega dinamicamente variáveis de ambiente da Vercel (/api/config) se disponíveis.
- */
-export async function initSupabaseFromRemoteConfig() {
-  if (typeof fetch === 'undefined') return;
-  try {
-    const res = await fetch('/api/config');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.supabaseUrl) {
-        setSupabaseConfig({
-          url: data.supabaseUrl,
-          publishableKey: data.supabaseKey || DEFAULT_PUBLISHABLE_KEY
-        });
-      }
-    }
-  } catch (e) {
-    // Silencioso caso esteja offline ou servindo estático puro
-  }
-}
-
-/**
  * Retorna ou cria a instância do cliente Supabase.
  */
 export function getSupabaseClient() {
