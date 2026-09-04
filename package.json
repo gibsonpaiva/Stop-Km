@@ -1,9 +1,0 @@
-{
-  "name": "stopkm",
-  "version": "2.0.0",
-  "private": true,
-  "description": "App PWA Mobile-First de controle de rotas para motoristas autônomos",
-  "scripts": {
-    "build": "echo 'Static build'"
-  }
-}
