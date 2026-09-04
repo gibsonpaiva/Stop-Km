@@ -2,11 +2,11 @@
   "name": "StopKm - Controle de Rotas",
   "short_name": "StopKm",
   "description": "App de controle de rotas, faturamento, km e combustível para motoristas de entrega autônomos.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#070D1B",
-  "theme_color": "#070D1B",
+  "background_color": "#0F2942",
+  "theme_color": "#0F2942",
   "orientation": "portrait",
   "icons": [
     {
