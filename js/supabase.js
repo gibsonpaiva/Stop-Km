@@ -76,8 +76,9 @@ export function getSupabaseClient() {
   try {
     clientInstance = createClientFn(config.url, config.publishableKey, {
       auth: {
-        persistSession: false,
-        autoRefreshToken: false
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
       }
     });
     return clientInstance;
@@ -311,4 +312,131 @@ export async function syncAllLocalToSupabase(localRoutes) {
     console.error('Erro ao sincronizar todas as rotas no Supabase:', err);
     return { success: false, count: 0, error: err.message || String(err) };
   }
+}
+
+/**
+ * Realiza login com e-mail e senha no Supabase Auth.
+ */
+export async function signInWithEmail(email, password) {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: 'Cliente Supabase não inicializado.' };
+
+  try {
+    const { data, error } = await client.auth.signInWithPassword({
+      email: email.trim(),
+      password: password
+    });
+
+    if (error) {
+      let friendlyMessage = error.message;
+      if (error.message.includes('Invalid login credentials')) {
+        friendlyMessage = 'E-mail ou senha incorretos.';
+      } else if (error.message.includes('Email not confirmed')) {
+        friendlyMessage = 'E-mail aguardando confirmação. Caso queira login direto, desative "Confirm email" no painel do Supabase.';
+      }
+      return { success: false, error: friendlyMessage };
+    }
+
+    return { success: true, user: data.user, session: data.session };
+  } catch (err) {
+    return { success: false, error: err.message || 'Erro inesperado ao realizar login.' };
+  }
+}
+
+/**
+ * Cria uma nova conta com e-mail e senha no Supabase Auth.
+ */
+export async function signUpWithEmail(email, password) {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: 'Cliente Supabase não inicializado.' };
+
+  try {
+    const { data, error } = await client.auth.signUp({
+      email: email.trim(),
+      password: password
+    });
+
+    if (error) {
+      let friendlyMessage = error.message;
+      if (error.message.includes('User already registered')) {
+        friendlyMessage = 'Este e-mail já está cadastrado. Tente fazer login.';
+      } else if (error.message.includes('Password should be at least')) {
+        friendlyMessage = 'A senha deve ter no mínimo 6 caracteres.';
+      }
+      return { success: false, error: friendlyMessage };
+    }
+
+    // Se o Supabase tiver confirmação de e-mail desativada, data.session já vem preenchido
+    const isConfirmed = Boolean(data.session);
+
+    return {
+      success: true,
+      user: data.user,
+      session: data.session,
+      isConfirmed
+    };
+  } catch (err) {
+    return { success: false, error: err.message || 'Erro inesperado ao criar conta.' };
+  }
+}
+
+/**
+ * Encerra a sessão do usuário no Supabase.
+ */
+export async function signOutUser() {
+  const client = getSupabaseClient();
+  if (!client) return { success: true };
+
+  try {
+    const { error } = await client.auth.signOut();
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.error('Erro ao deslogar:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Retorna o usuário logado atualmente (ou null).
+ */
+export async function getCurrentUser() {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    return user;
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * Retorna a sessão ativa atual.
+ */
+export async function getCurrentSession() {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data: { session } } = await client.auth.getSession();
+    return session;
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * Escuta mudanças no estado de autenticação (SIGNED_IN, SIGNED_OUT, etc.).
+ */
+export function onAuthStateChange(callback) {
+  const client = getSupabaseClient();
+  if (!client) return { unsubscribe: () => {} };
+
+  const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+    callback(event, session);
+  });
+
+  return subscription;
 }

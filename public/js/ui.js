@@ -36,7 +36,13 @@ import {
   getSupabaseConfig,
   setSupabaseConfig,
   testSupabaseConnection,
-  isSupabaseConfigured
+  isSupabaseConfigured,
+  signInWithEmail,
+  signUpWithEmail,
+  signOutUser,
+  getCurrentUser,
+  getCurrentSession,
+  onAuthStateChange
 } from './supabase.js';
 
 import { renderDashboardCharts } from './charts.js';
@@ -55,6 +61,7 @@ export function initUI() {
   setupReceiptFilters();
   setupModals();
   setupSettingsAndBackups();
+  setupAuthUI();
   setDefaultFormValues();
 
   updateAllViews();
@@ -883,4 +890,210 @@ export function updateAllViews() {
   if (activeTab === 'tab-reports') renderReceiptCard(receiptPeriodFilter);
   
   updateHeroCards();
+}
+
+/**
+ * Configuração e gerenciamento da Tela de Login e Autenticação (Supabase Auth)
+ */
+function setupAuthUI() {
+  const authScreen = document.getElementById('auth-screen');
+  if (!authScreen) return;
+
+  const tabLogin = document.getElementById('tab-auth-login');
+  const tabSignup = document.getElementById('tab-auth-signup');
+  const authForm = document.getElementById('auth-form');
+  const emailInput = document.getElementById('auth-email');
+  const passwordInput = document.getElementById('auth-password');
+  const passwordHint = document.getElementById('auth-password-hint');
+  const togglePasswordBtn = document.getElementById('btn-toggle-password');
+  const submitBtn = document.getElementById('btn-auth-submit');
+  const submitText = document.getElementById('btn-auth-text');
+  const submitSpinner = document.getElementById('btn-auth-spinner');
+  const feedbackBox = document.getElementById('auth-feedback');
+  const feedbackIcon = document.getElementById('auth-feedback-icon');
+  const feedbackText = document.getElementById('auth-feedback-text');
+  const subtitle = document.getElementById('auth-subtitle');
+  const logoutBtn = document.getElementById('btn-logout');
+  const userEmailDisplay = document.getElementById('user-email-display');
+  const userAvatarInitials = document.getElementById('user-avatar-initials');
+  const userStatusBadge = document.getElementById('user-status-badge');
+
+  let currentMode = 'login'; // 'login' | 'signup'
+
+  function showFeedback(msg, type = 'error') {
+    if (!feedbackBox) return;
+    feedbackBox.className = 'mt-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ' +
+      (type === 'error' ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200');
+    if (feedbackIcon) feedbackIcon.textContent = type === 'error' ? '⚠️' : '✅';
+    if (feedbackText) feedbackText.textContent = msg;
+    feedbackBox.classList.remove('hidden');
+  }
+
+  function hideFeedback() {
+    if (feedbackBox) feedbackBox.classList.add('hidden');
+  }
+
+  function setAuthMode(mode) {
+    currentMode = mode;
+    hideFeedback();
+    triggerHaptic('light');
+
+    if (mode === 'login') {
+      tabLogin?.classList.add('text-[#0F2942]', 'bg-white', 'shadow-sm');
+      tabLogin?.classList.remove('text-slate-400');
+      tabSignup?.classList.remove('text-[#0F2942]', 'bg-white', 'shadow-sm');
+      tabSignup?.classList.add('text-slate-400');
+      if (subtitle) subtitle.textContent = 'Acesse sua conta para gerenciar suas rotas';
+      if (submitText) submitText.textContent = 'Entrar no StopKm';
+      if (passwordHint) passwordHint.classList.add('hidden');
+      if (passwordInput) passwordInput.autocomplete = 'current-password';
+    } else {
+      tabSignup?.classList.add('text-[#0F2942]', 'bg-white', 'shadow-sm');
+      tabSignup?.classList.remove('text-slate-400');
+      tabLogin?.classList.remove('text-[#0F2942]', 'bg-white', 'shadow-sm');
+      tabLogin?.classList.add('text-slate-400');
+      if (subtitle) subtitle.textContent = 'Crie sua conta para salvar suas rotas na nuvem';
+      if (submitText) submitText.textContent = 'Criar Conta e Entrar';
+      if (passwordHint) passwordHint.classList.remove('hidden');
+      if (passwordInput) passwordInput.autocomplete = 'new-password';
+    }
+  }
+
+  tabLogin?.addEventListener('click', () => setAuthMode('login'));
+  tabSignup?.addEventListener('click', () => setAuthMode('signup'));
+
+  // Toggle mostrar/ocultar senha
+  togglePasswordBtn?.addEventListener('click', () => {
+    if (!passwordInput) return;
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    const eyeSvg = togglePasswordBtn.querySelector('svg');
+    if (eyeSvg) {
+      eyeSvg.innerHTML = isPassword
+        ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>`
+        : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    }
+  });
+
+  // Atualizar visual do usuário logado na UI
+  function updateUserState(user) {
+    if (user && user.email) {
+      if (userEmailDisplay) userEmailDisplay.textContent = user.email;
+      if (userAvatarInitials) {
+        userAvatarInitials.textContent = user.email.charAt(0).toUpperCase();
+      }
+      if (userStatusBadge) {
+        userStatusBadge.textContent = 'Conectado';
+        userStatusBadge.className = 'text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700';
+      }
+      authScreen.classList.add('hidden');
+    } else {
+      if (userEmailDisplay) userEmailDisplay.textContent = 'Desconectado';
+      if (userAvatarInitials) userAvatarInitials.textContent = '?';
+      if (userStatusBadge) {
+        userStatusBadge.textContent = 'Não conectado';
+        userStatusBadge.className = 'text-[9px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-500';
+      }
+      authScreen.classList.remove('hidden');
+    }
+  }
+
+  // Verificação inicial de sessão
+  getCurrentSession().then((session) => {
+    if (session && session.user) {
+      updateUserState(session.user);
+    } else {
+      updateUserState(null);
+    }
+  }).catch(() => {
+    updateUserState(null);
+  });
+
+  // Listener para mudanças no estado de autenticação
+  onAuthStateChange((event, session) => {
+    if (session && session.user) {
+      updateUserState(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      updateUserState(null);
+    }
+  });
+
+  // Envio do formulário de autenticação
+  authForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideFeedback();
+
+    const email = (emailInput?.value || '').trim();
+    const password = passwordInput?.value || '';
+
+    if (!email || !password) {
+      showFeedback('Por favor, informe seu e-mail e sua senha.');
+      return;
+    }
+
+    if (password.length < 6) {
+      showFeedback('A senha deve conter no mínimo 6 caracteres.');
+      return;
+    }
+
+    // Estado de carregamento
+    if (submitBtn) submitBtn.disabled = true;
+    if (submitSpinner) submitSpinner.classList.remove('hidden');
+    if (submitText) submitText.textContent = currentMode === 'login' ? 'Entrando...' : 'Criando conta...';
+
+    try {
+      if (currentMode === 'login') {
+        const res = await signInWithEmail(email, password);
+        if (!res.success) {
+          showFeedback(res.error || 'Falha ao autenticar.');
+        } else {
+          triggerHaptic('medium');
+          triggerConfetti();
+          showToast(`Bem-vindo, ${res.user.email}!`, 'success');
+          updateUserState(res.user);
+          syncWithSupabase().then(() => updateAllViews()).catch(() => {});
+        }
+      } else {
+        const res = await signUpWithEmail(email, password);
+        if (!res.success) {
+          showFeedback(res.error || 'Falha ao criar conta.');
+        } else {
+          triggerHaptic('medium');
+          triggerConfetti();
+          if (res.isConfirmed || res.session) {
+            showToast('Conta criada com sucesso! Bem-vindo!', 'success');
+            updateUserState(res.user);
+            syncWithSupabase().then(() => updateAllViews()).catch(() => {});
+          } else {
+            showFeedback('Conta criada com sucesso! Você já pode entrar com seu e-mail e senha.', 'success');
+            setAuthMode('login');
+          }
+        }
+      }
+    } catch (err) {
+      showFeedback(err.message || 'Erro inesperado.');
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+      if (submitSpinner) submitSpinner.classList.add('hidden');
+      if (submitText) submitText.textContent = currentMode === 'login' ? 'Entrar no StopKm' : 'Criar Conta e Entrar';
+    }
+  });
+
+  // Botão Sair da Conta (Logout)
+  logoutBtn?.addEventListener('click', async () => {
+    triggerHaptic('medium');
+    const confirmed = confirm('Deseja realmente sair da sua conta StopKm?');
+    if (!confirmed) return;
+
+    const res = await signOutUser();
+    if (res.success) {
+      showToast('Sessão encerrada com sucesso.', 'info');
+      updateUserState(null);
+      // Fecha o modal de configurações
+      document.getElementById('modal-settings')?.classList.add('hidden');
+      document.getElementById('modal-settings')?.classList.remove('flex');
+    } else {
+      showToast('Erro ao sair: ' + res.error, 'error');
+    }
+  });
 }

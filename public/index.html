@@ -1144,6 +1144,25 @@ input:checked + .larq-slider:before {
         <button id="btn-close-settings" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">✕</button>
       </div>
 
+      <!-- Conta de Usuário (Supabase Auth) -->
+      <div class="p-3.5 rounded-2xl bg-[#EEF4FA] text-xs space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[#25A4DC] block">Sua Conta</span>
+          <span id="user-status-badge" class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">Conectado</span>
+        </div>
+        <div class="flex items-center gap-2.5 pt-0.5">
+          <div class="w-8 h-8 rounded-full bg-[#0F2942] text-white flex items-center justify-center font-bold text-xs flex-shrink-0" id="user-avatar-initials">M</div>
+          <div class="flex-1 min-w-0">
+            <div id="user-email-display" class="font-bold text-[#0F2942] truncate text-xs">Carregando...</div>
+            <div class="text-[10px] text-slate-400 font-medium">Sessão ativa via Supabase</div>
+          </div>
+        </div>
+        <button id="btn-logout" class="w-full py-2 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors mt-1">
+          <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Sair da Conta
+        </button>
+      </div>
+
       <!-- Configuração das Regras de Remuneração -->
       <div class="p-3.5 rounded-2xl bg-[#EEF4FA] text-xs space-y-2.5">
         <div class="flex items-center justify-between">
@@ -1210,6 +1229,98 @@ input:checked + .larq-slider:before {
         <button id="btn-reset-sample-data" class="w-full p-2.5 rounded-xl bg-[#EEF4FA] text-slate-600 text-xs font-bold flex items-center justify-center gap-1.5 mt-2">
           🔄 Recarregar Dados de Exemplo
         </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Tela de Autenticação / Login LARQ (Mobile First & Desktop Adaptivo)
+       ========================================================================= -->
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#EEF4FA] overflow-y-auto transition-all duration-300">
+    <div class="w-full max-w-md my-auto">
+      
+      <!-- Card Principal de Login / Cadastro -->
+      <div class="bg-white rounded-[28px] p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(15,41,66,0.12)] border border-white/80 relative overflow-hidden">
+        
+        <!-- Detalhes decorativos de fundo (Glow LARQ) -->
+        <div class="absolute -right-16 -top-16 w-36 h-36 bg-[#25A4DC]/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -left-16 -bottom-16 w-36 h-36 bg-[#0F2942]/5 rounded-full blur-2xl pointer-events-none"></div>
+
+        <!-- Cabeçalho com Logo -->
+        <div class="text-center relative z-10">
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0F2942] shadow-lg shadow-[#0F2942]/20 mb-3.5">
+            <img src="./assets/logo.svg" alt="StopKm" class="w-8 h-8 object-contain">
+          </div>
+          <h1 class="text-2xl font-black text-[#0F2942] tracking-tight">StopKm</h1>
+          <p class="text-xs font-semibold text-slate-400 mt-1" id="auth-subtitle">Acesse sua conta para gerenciar suas rotas</p>
+        </div>
+
+        <!-- Segmented Control (Abas Entrar / Criar Conta) -->
+        <div class="mt-6 p-1 bg-[#EEF4FA] rounded-2xl flex items-center relative">
+          <button type="button" id="tab-auth-login" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-[#0F2942] bg-white shadow-sm" data-auth-mode="login">
+            Entrar
+          </button>
+          <button type="button" id="tab-auth-signup" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-[#0F2942]" data-auth-mode="signup">
+            Criar Conta
+          </button>
+        </div>
+
+        <!-- Alerta de Feedback / Mensagens de Erro e Sucesso -->
+        <div id="auth-feedback" class="hidden mt-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2">
+          <span id="auth-feedback-icon">⚠️</span>
+          <span id="auth-feedback-text" class="flex-1 leading-snug"></span>
+        </div>
+
+        <!-- Formulário de Autenticação -->
+        <form id="auth-form" class="mt-5 space-y-4 relative z-10" autocomplete="on">
+          
+          <!-- Campo E-mail -->
+          <div>
+            <label for="auth-email" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 ml-1">E-mail</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+              </div>
+              <input type="email" id="auth-email" required placeholder="seu@email.com" autocomplete="email" class="w-full pl-10 pr-3.5 py-3 rounded-2xl bg-[#E5EFF8]/60 border border-transparent focus:border-[#25A4DC] focus:bg-white text-xs font-bold text-[#0F2942] placeholder:text-slate-400/80 focus:outline-none transition-all shadow-inner">
+            </div>
+          </div>
+
+          <!-- Campo Senha -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5 ml-1">
+              <label for="auth-password" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Senha</label>
+              <span id="auth-password-hint" class="text-[10px] text-slate-400 hidden">Mínimo 6 dígitos</span>
+            </div>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              </div>
+              <input type="password" id="auth-password" required placeholder="••••••••" minlength="6" autocomplete="current-password" class="w-full pl-10 pr-10 py-3 rounded-2xl bg-[#E5EFF8]/60 border border-transparent focus:border-[#25A4DC] focus:bg-white text-xs font-bold text-[#0F2942] placeholder:text-slate-400/80 focus:outline-none transition-all shadow-inner">
+              <button type="button" id="btn-toggle-password" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                <svg id="eye-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Botão Submeter -->
+          <div class="pt-2">
+            <button type="submit" id="btn-auth-submit" class="w-full py-3.5 px-4 rounded-2xl bg-[#0F2942] hover:bg-[#153a5c] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#0F2942]/15 active:scale-[0.98] transition-all cursor-pointer">
+              <span id="btn-auth-text">Entrar no StopKm</span>
+              <svg id="btn-auth-spinner" class="hidden w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </button>
+          </div>
+
+        </form>
+
+        <!-- Rodapé do Card -->
+        <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+          <div class="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium">
+            <svg class="w-3.5 h-3.5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>Autenticação direta com Supabase</span>
+          </div>
+        </div>
+
       </div>
 
     </div>
