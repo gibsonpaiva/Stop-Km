@@ -29,7 +29,8 @@ import {
   importDataFromJSON,
   getSettings,
   saveSettings,
-  syncWithSupabase
+  syncWithSupabase,
+  setCurrentUserId
 } from './store.js';
 
 import {
@@ -978,6 +979,7 @@ function setupAuthUI() {
   // Atualizar visual do usuário logado na UI
   function updateUserState(user) {
     if (user && user.email) {
+      setCurrentUserId(user.id);
       if (userEmailDisplay) userEmailDisplay.textContent = user.email;
       if (userAvatarInitials) {
         userAvatarInitials.textContent = user.email.charAt(0).toUpperCase();
@@ -987,7 +989,9 @@ function setupAuthUI() {
         userStatusBadge.className = 'text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700';
       }
       authScreen.classList.add('hidden');
+      updateAllViews();
     } else {
+      setCurrentUserId(null);
       if (userEmailDisplay) userEmailDisplay.textContent = 'Desconectado';
       if (userAvatarInitials) userAvatarInitials.textContent = '?';
       if (userStatusBadge) {
@@ -995,6 +999,7 @@ function setupAuthUI() {
         userStatusBadge.className = 'text-[9px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-500';
       }
       authScreen.classList.remove('hidden');
+      updateAllViews();
     }
   }
 

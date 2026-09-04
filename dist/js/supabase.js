@@ -91,8 +91,8 @@ export function getSupabaseClient() {
 /**
  * Mapeia um objeto de rota do formato interno JS (camelCase) para colunas do Postgres (snake_case).
  */
-export function routeToDbRow(route) {
-  return {
+export function routeToDbRow(route, userId = null) {
+  const row = {
     id: route.id,
     date: route.date,
     start_time: route.startTime || null,
@@ -119,6 +119,12 @@ export function routeToDbRow(route) {
     created_at: route.createdAt || new Date().toISOString(),
     updated_at: route.updatedAt || new Date().toISOString()
   };
+
+  if (userId) {
+    row.user_id = userId;
+  }
+
+  return row;
 }
 
 /**
@@ -127,6 +133,7 @@ export function routeToDbRow(route) {
 export function dbRowToRoute(row) {
   return {
     id: row.id,
+    userId: row.user_id || null,
     date: row.date,
     startTime: row.start_time || '08:00',
     endTime: row.end_time || '17:00',
@@ -174,19 +181,32 @@ export async function testSupabaseConnection() {
 }
 
 /**
- * Busca todas as rotas salvas no Supabase.
+ * Busca as rotas do usuário logado salvas no Supabase.
  */
 export async function fetchRoutesFromSupabase() {
   const client = getSupabaseClient();
   if (!client) return null;
 
   try {
-    const { data, error } = await client
-      .from('routes')
-      .select('*')
-      .order('date', { ascending: false });
+    const user = await getCurrentUser();
+    let query = client.from('routes').select('*').order('date', { ascending: false });
 
-    if (error) throw error;
+    // Se o usuário estiver autenticado, filtra estritamente pelas rotas dele
+    if (user && user.id) {
+      query = query.eq('user_id', user.id);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      // Se a coluna user_id ainda não tiver sido adicionada no SQL pelo usuário, tenta fallback
+      if (error.message && error.message.includes('column routes.user_id does not exist')) {
+        const fallback = await client.from('routes').select('*').order('date', { ascending: false });
+        if (!fallback.error && Array.isArray(fallback.data)) {
+          return fallback.data.map(dbRowToRoute);
+        }
+      }
+      throw error;
+    }
     if (!Array.isArray(data)) return [];
 
     return data.map(dbRowToRoute);
@@ -197,17 +217,24 @@ export async function fetchRoutesFromSupabase() {
 }
 
 /**
- * Insere ou atualiza uma rota no Supabase (upsert).
+ * Insere ou atualiza uma rota do usuário no Supabase (upsert).
  */
 export async function upsertRouteToSupabase(route) {
   const client = getSupabaseClient();
   if (!client) return false;
 
   try {
-    const row = routeToDbRow(route);
-    const { error } = await client
+    const user = await getCurrentUser();
+    const row = routeToDbRow(route, user ? user.id : null);
+    let { error } = await client
       .from('routes')
       .upsert(row, { onConflict: 'id' });
+
+    if (error && error.message && error.message.includes('column "user_id" of relation "routes" does not exist')) {
+      delete row.user_id;
+      const res = await client.from('routes').upsert(row, { onConflict: 'id' });
+      error = res.error;
+    }
 
     if (error) throw error;
     return true;
@@ -218,18 +245,20 @@ export async function upsertRouteToSupabase(route) {
 }
 
 /**
- * Remove uma rota no Supabase pelo ID.
+ * Remove uma rota no Supabase pelo ID vinculada ao usuário.
  */
 export async function deleteRouteFromSupabase(id) {
   const client = getSupabaseClient();
   if (!client) return false;
 
   try {
-    const { error } = await client
-      .from('routes')
-      .delete()
-      .eq('id', id);
+    const user = await getCurrentUser();
+    let query = client.from('routes').delete().eq('id', id);
+    if (user && user.id) {
+      query = query.eq('user_id', user.id);
+    }
 
+    const { error } = await query;
     if (error) throw error;
     return true;
   } catch (err) {
@@ -301,10 +330,22 @@ export async function syncAllLocalToSupabase(localRoutes) {
   }
 
   try {
-    const rows = localRoutes.map(routeToDbRow);
-    const { error } = await client
+    const user = await getCurrentUser();
+    const userId = user ? user.id : null;
+    let rows = localRoutes.map((r) => routeToDbRow(r, userId));
+    let { error } = await client
       .from('routes')
       .upsert(rows, { onConflict: 'id' });
+
+    if (error && error.message && error.message.includes('column "user_id" of relation "routes" does not exist')) {
+      rows = rows.map((r) => {
+        const clone = { ...r };
+        delete clone.user_id;
+        return clone;
+      });
+      const res = await client.from('routes').upsert(rows, { onConflict: 'id' });
+      error = res.error;
+    }
 
     if (error) throw error;
     return { success: true, count: rows.length };

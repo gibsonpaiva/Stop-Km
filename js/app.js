@@ -7,9 +7,6 @@ import { initUI, updateAllViews } from './ui.js';
 import { subscribe, seedSampleDataIfEmpty } from './store.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Popula com dados iniciais realistas se estiver vazio no primeiro acesso
-  seedSampleDataIfEmpty();
-
   // Inicializa toda a interface e eventos
   initUI();
 

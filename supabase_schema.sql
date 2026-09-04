@@ -1,11 +1,12 @@
 -- ==============================================================================
--- STOPKM - ESTRUTURA DO BANCO DE DADOS SUPABASE
+-- STOPKM - ESTRUTURA DO BANCO DE DADOS SUPABASE (MULTI-USUÁRIO / RLS)
 -- Execute este script no menu "SQL Editor" do seu painel Supabase
 -- ==============================================================================
 
--- 1. Criação da Tabela de Rotas (routes)
+-- 1. Criação / Atualização da Tabela de Rotas (routes)
 CREATE TABLE IF NOT EXISTS public.routes (
     id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     date DATE NOT NULL,
     start_time TEXT,
     end_time TEXT,
@@ -32,7 +33,11 @@ CREATE TABLE IF NOT EXISTS public.routes (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Índices para buscas rápidas por data e ordenação histórica
+-- Adiciona user_id caso a tabela já existisse sem a coluna
+ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- Índices para buscas rápidas por usuário, data e criação
+CREATE INDEX IF NOT EXISTS idx_routes_user_id ON public.routes(user_id);
 CREATE INDEX IF NOT EXISTS idx_routes_date ON public.routes(date DESC);
 CREATE INDEX IF NOT EXISTS idx_routes_created_at ON public.routes(created_at DESC);
 
@@ -44,7 +49,6 @@ CREATE TABLE IF NOT EXISTS public.settings (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Inserir configuração padrão inicial caso não exista
 INSERT INTO public.settings (id, base_package_rate, sunday_package_rate, updated_at)
 VALUES ('app_settings', 2.50, 4.00, now())
 ON CONFLICT (id) DO NOTHING;
@@ -53,17 +57,21 @@ ON CONFLICT (id) DO NOTHING;
 ALTER TABLE public.routes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 
--- 4. Políticas de Acesso Total via Publishable Key (sb_publishable_...)
+-- 4. Políticas de Segurança por Usuário (Cada motorista só acessa os SEUS dados)
 DROP POLICY IF EXISTS "Permitir acesso total rotas" ON public.routes;
-CREATE POLICY "Permitir acesso total rotas" 
+DROP POLICY IF EXISTS "Usuários gerenciam apenas suas próprias rotas" ON public.routes;
+
+CREATE POLICY "Usuários gerenciam apenas suas próprias rotas" 
 ON public.routes 
 FOR ALL 
-TO anon, authenticated
-USING (true) 
-WITH CHECK (true);
+TO authenticated
+USING (auth.uid() = user_id) 
+WITH CHECK (auth.uid() = user_id);
 
+-- Configurações gerais compartilhadas
 DROP POLICY IF EXISTS "Permitir acesso total configuracoes" ON public.settings;
-CREATE POLICY "Permitir acesso total configuracoes" 
+DROP POLICY IF EXISTS "Leitura de configuracoes" ON public.settings;
+CREATE POLICY "Leitura de configuracoes" 
 ON public.settings 
 FOR ALL 
 TO anon, authenticated

@@ -14,7 +14,32 @@ import {
   syncAllLocalToSupabase
 } from './supabase.js';
 
-const STORAGE_KEY = 'STOPKM_ROUTES_V2';
+let currentUserId = null;
+
+/**
+ * Define o ID do usuário atualmente autenticado para isolar os dados locais e remotos.
+ * @param {string|null} userId 
+ */
+export function setCurrentUserId(userId) {
+  currentUserId = userId || null;
+  notifyListeners();
+}
+
+/**
+ * Retorna o ID do usuário autenticado ativo na store.
+ */
+export function getCurrentUserId() {
+  return currentUserId;
+}
+
+function getStorageKey() {
+  return currentUserId ? `STOPKM_ROUTES_${currentUserId}` : 'STOPKM_ROUTES_V2';
+}
+
+function getSettingsKey() {
+  return currentUserId ? `STOPKM_SETTINGS_${currentUserId}` : 'STOPKM_SETTINGS_V2';
+}
+
 const listeners = new Set();
 
 /**
@@ -49,7 +74,7 @@ export function subscribe(callback) {
  */
 export function getRoutes() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey());
     if (!raw) return [];
     const list = JSON.parse(raw);
     if (!Array.isArray(list)) return [];
@@ -72,11 +97,9 @@ export function getRoutes() {
  * @param {Array<Object>} routes 
  */
 function saveRoutes(routes) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(routes));
+  localStorage.setItem(getStorageKey(), JSON.stringify(routes));
   notifyListeners();
 }
-
-const SETTINGS_KEY = 'STOPKM_SETTINGS_V2';
 
 /**
  * Obtém as configurações de remuneração vigentes salvas.
@@ -84,7 +107,7 @@ const SETTINGS_KEY = 'STOPKM_SETTINGS_V2';
  */
 export function getSettings() {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = localStorage.getItem(getSettingsKey());
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
@@ -112,7 +135,7 @@ export function saveSettings(newSettings) {
     basePackageRate: typeof newSettings.basePackageRate === 'number' && newSettings.basePackageRate > 0 ? newSettings.basePackageRate : current.basePackageRate,
     sundayPackageRate: typeof newSettings.sundayPackageRate === 'number' && newSettings.sundayPackageRate > 0 ? newSettings.sundayPackageRate : current.sundayPackageRate
   };
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+  localStorage.setItem(getSettingsKey(), JSON.stringify(updated));
   notifyListeners();
 
   if (isSupabaseConfigured()) {
@@ -239,7 +262,7 @@ export function getRouteById(id) {
  * Limpa todos os dados salvos.
  */
 export function clearAllRoutes() {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(getStorageKey());
   notifyListeners();
 }
 
@@ -456,8 +479,8 @@ export function importDataFromJSON(jsonString) {
  * Popula com dados de demonstração realistas se o app estiver vazio.
  */
 export function seedSampleDataIfEmpty(force = false) {
-  const routes = getRoutes();
-  if (routes.length > 0 && !force) return;
+  // Apenas semeia dados de exemplo se for explicitamente solicitado pelo usuário
+  if (!force) return;
 
   const now = new Date();
   const sampleEntries = [];
