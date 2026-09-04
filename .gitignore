@@ -3,7 +3,4 @@ node_modules/
 Thumbs.db
 *.log
 local-server.js
-package.json
-package-lock.json
-vercel.json
-
+dist/
