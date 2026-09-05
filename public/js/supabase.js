@@ -237,8 +237,9 @@ export async function upsertRouteToSupabase(route) {
       .from('routes')
       .upsert(row, { onConflict: 'id' });
 
-    if (error && error.message && error.message.includes('column "user_id" of relation "routes" does not exist')) {
-      delete row.user_id;
+    if (error && error.message && error.message.includes('does not exist')) {
+      if (error.message.includes('packages_per_hour')) delete row.packages_per_hour;
+      if (error.message.includes('user_id')) delete row.user_id;
       const res = await client.from('routes').upsert(row, { onConflict: 'id' });
       error = res.error;
     }
@@ -344,10 +345,11 @@ export async function syncAllLocalToSupabase(localRoutes) {
       .from('routes')
       .upsert(rows, { onConflict: 'id' });
 
-    if (error && error.message && error.message.includes('column "user_id" of relation "routes" does not exist')) {
+    if (error && error.message && error.message.includes('does not exist')) {
       rows = rows.map((r) => {
         const clone = { ...r };
-        delete clone.user_id;
+        if (error.message.includes('packages_per_hour')) delete clone.packages_per_hour;
+        if (error.message.includes('user_id')) delete clone.user_id;
         return clone;
       });
       const res = await client.from('routes').upsert(rows, { onConflict: 'id' });
