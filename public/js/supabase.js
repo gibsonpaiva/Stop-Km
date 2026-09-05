@@ -116,6 +116,7 @@ export function routeToDbRow(route, userId = null) {
     density_per_stop: typeof route.densityPerStop === 'number' ? route.densityPerStop : 0,
     hourly_gross: typeof route.hourlyGross === 'number' ? route.hourlyGross : 0,
     hourly_net: typeof route.hourlyNet === 'number' ? route.hourlyNet : 0,
+    packages_per_hour: typeof route.packagesPerHour === 'number' ? route.packagesPerHour : 0,
     created_at: route.createdAt || new Date().toISOString(),
     updated_at: route.updatedAt || new Date().toISOString()
   };
@@ -131,6 +132,12 @@ export function routeToDbRow(route, userId = null) {
  * Mapeia uma linha do Postgres (snake_case) para o objeto de rota interno JS (camelCase).
  */
 export function dbRowToRoute(row) {
+  const durationHours = Number(row.duration_hours) || 0;
+  const packages = Number(row.packages) || 0;
+  const packagesPerHour = row.packages_per_hour !== undefined && row.packages_per_hour !== null
+    ? Number(row.packages_per_hour)
+    : (durationHours > 0 ? Number((packages / durationHours).toFixed(1)) : 0);
+
   return {
     id: row.id,
     userId: row.user_id || null,
@@ -138,12 +145,12 @@ export function dbRowToRoute(row) {
     startTime: row.start_time || '08:00',
     endTime: row.end_time || '17:00',
     durationFormatted: row.duration_formatted || '00h 00m',
-    durationHours: Number(row.duration_hours) || 0,
+    durationHours,
     startKm: Number(row.start_km) || 0,
     endKm: Number(row.end_km) || 0,
     totalKm: Number(row.total_km) || 0,
     stops: Number(row.stops) || 0,
-    packages: Number(row.packages) || 0,
+    packages,
     fuelCost: Number(row.fuel_cost) || 0,
     isSundayRate: Boolean(row.is_sunday_rate),
     ratePerPackage: Number(row.rate_per_package) || 2.50,
@@ -156,6 +163,7 @@ export function dbRowToRoute(row) {
     densityPerStop: Number(row.density_per_stop) || 0,
     hourlyGross: Number(row.hourly_gross) || 0,
     hourlyNet: Number(row.hourly_net) || 0,
+    packagesPerHour,
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString()
   };

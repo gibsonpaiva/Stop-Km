@@ -355,6 +355,7 @@ export function getAggregatedMetrics(routeList = []) {
       totalHoursDecimal: 0,
       avgEarningsPerKm: 0,
       avgPackagesPerStop: 0,
+      avgPackagesPerHour: 0,
       avgMinutesPerDay: 0,
       avgHoursFormatted: '0h 00m',
       avgPackagesPerDay: 0,
@@ -381,8 +382,10 @@ export function getAggregatedMetrics(routeList = []) {
     totalMinutes += r.totalMinutes || 0;
   }
 
+  const totalHours = totalMinutes / 60;
   const avgEarningsPerKm = totalKm > 0 ? totalGross / totalKm : 0;
   const avgPackagesPerStop = totalStops > 0 ? totalPackages / totalStops : 0;
+  const avgPackagesPerHour = totalHours > 0 ? Number((totalPackages / totalHours).toFixed(1)) : 0;
   const avgMinutesPerDay = daysWorked > 0 ? Math.round(totalMinutes / daysWorked) : 0;
   const avgPackagesPerDay = daysWorked > 0 ? Number((totalPackages / daysWorked).toFixed(1)) : 0;
   const avgGrossPerDay = daysWorked > 0 ? totalGross / daysWorked : 0;
@@ -403,6 +406,7 @@ export function getAggregatedMetrics(routeList = []) {
     totalHoursDecimal: Number((totalMinutes / 60).toFixed(1)),
     avgEarningsPerKm,
     avgPackagesPerStop,
+    avgPackagesPerHour,
     avgMinutesPerDay,
     avgHoursFormatted,
     avgPackagesPerDay,

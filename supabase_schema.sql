@@ -29,12 +29,14 @@ CREATE TABLE IF NOT EXISTS public.routes (
     density_per_stop NUMERIC DEFAULT 0,
     hourly_gross NUMERIC DEFAULT 0,
     hourly_net NUMERIC DEFAULT 0,
+    packages_per_hour NUMERIC DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Adiciona user_id caso a tabela já existisse sem a coluna
+-- Adiciona user_id e packages_per_hour caso a tabela já existisse sem as colunas
 ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS packages_per_hour NUMERIC DEFAULT 0;
 
 -- Índices para buscas rápidas por usuário, data e criação
 CREATE INDEX IF NOT EXISTS idx_routes_user_id ON public.routes(user_id);

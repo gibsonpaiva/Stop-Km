@@ -833,8 +833,8 @@ input:checked + .larq-slider:before {
                 </div>
               </div>
 
-              <!-- 4 Mini Indicadores -->
-              <div class="grid grid-cols-4 gap-2 pt-3 border-t border-slate-100 text-center">
+              <!-- Mini Indicadores Operacionais -->
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-3 border-t border-slate-100 text-center">
                 <div class="bg-[#EEF4FA] rounded-xl p-2">
                   <span class="text-[9px] uppercase font-bold text-slate-400 block">Km Total</span>
                   <span id="preview-total-km" class="text-xs md:text-sm font-bold text-[#0F2942] block mt-0.5">0 km</span>
@@ -844,10 +844,14 @@ input:checked + .larq-slider:before {
                   <span id="preview-total-time" class="text-xs md:text-sm font-bold text-[#0F2942] block mt-0.5">0h 00m</span>
                 </div>
                 <div class="bg-[#EEF4FA] rounded-xl p-2">
+                  <span class="text-[9px] uppercase font-bold text-slate-400 block">Ritmo</span>
+                  <span id="preview-packages-hour" class="text-xs md:text-sm font-bold text-[#25A4DC] block mt-0.5">0 pct/h</span>
+                </div>
+                <div class="bg-[#EEF4FA] rounded-xl p-2">
                   <span class="text-[9px] uppercase font-bold text-slate-400 block">R$/Km</span>
                   <span id="preview-efficiency" class="text-xs md:text-sm font-bold text-[#25A4DC] block mt-0.5">R$ 0,00</span>
                 </div>
-                <div class="bg-[#EEF4FA] rounded-xl p-2">
+                <div class="bg-[#EEF4FA] rounded-xl p-2 col-span-2 sm:col-span-1">
                   <span class="text-[9px] uppercase font-bold text-slate-400 block">Densidade</span>
                   <span id="preview-density" class="text-xs md:text-sm font-bold text-[#0F2942] block mt-0.5">0 pct</span>
                 </div>
@@ -885,10 +889,10 @@ input:checked + .larq-slider:before {
           </div>
         </div>
 
-        <!-- Seção: 4 KPIs Principais -->
+        <!-- Seção: 5 KPIs Principais -->
         <div>
           <h3 class="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Desempenho Geral</h3>
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
             
             <!-- Km Rodados -->
             <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm">
@@ -912,6 +916,17 @@ input:checked + .larq-slider:before {
               </div>
             </div>
 
+            <!-- Ritmo (Pacotes / Hora) -->
+            <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm border border-sky-100/60">
+              <div class="w-10 h-10 rounded-2xl bg-[#0F2942] text-white flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              </div>
+              <div>
+                <span class="text-[10px] md:text-xs text-slate-400 font-medium block">Pacotes / Hora</span>
+                <div id="kpi-packages-hour" class="text-sm md:text-lg font-extrabold text-[#25A4DC]">0 pct/h</div>
+              </div>
+            </div>
+
             <!-- Eficiência R$/Km -->
             <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm">
               <div class="w-10 h-10 rounded-2xl bg-[#0F2942] text-white flex items-center justify-center flex-shrink-0">
@@ -919,12 +934,12 @@ input:checked + .larq-slider:before {
               </div>
               <div>
                 <span class="text-[10px] md:text-xs text-slate-400 font-medium block">Eficiência</span>
-                <div id="kpi-efficiency-km" class="text-sm md:text-lg font-extrabold text-[#25A4DC]">R$ 0,00/km</div>
+                <div id="kpi-efficiency-km" class="text-sm md:text-lg font-extrabold text-[#0F2942]">R$ 0,00/km</div>
               </div>
             </div>
 
             <!-- Combustível Gasto -->
-            <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm">
+            <div class="larq-card-white p-4 flex items-start gap-3 shadow-sm col-span-2 sm:col-span-1 md:col-span-2 lg:col-span-1">
               <div class="w-10 h-10 rounded-2xl bg-[#0F2942] text-white flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
               </div>

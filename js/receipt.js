@@ -130,6 +130,10 @@ export function renderReceiptCard(period = 'this_month', startDate = '', endDate
           <span class="font-bold text-[#25A4DC]">${formatCurrency(metrics.avgEarningsPerKm)} / km</span>
         </div>
         <div class="flex justify-between items-center text-slate-600">
+          <span>Ritmo Médio</span>
+          <span class="font-bold text-[#25A4DC]">${formatNumber(metrics.avgPackagesPerHour, 1)} pacotes / hora</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-600">
           <span>Densidade Média</span>
           <span class="font-bold text-[#0F2942]">${formatNumber(metrics.avgPackagesPerStop, 2)} pct / parada</span>
         </div>
@@ -209,6 +213,7 @@ export function shareReceiptSummary(period = 'today') {
   const text = `🚚 *Relatório StopKm - Resumo de Rotas*\n` +
     `🗓 *Período:* ${periodName}\n` +
     `📦 *Pacotes Entregues:* ${metrics.totalPackages} un\n` +
+    `⚡ *Ritmo Médio:* ${formatNumber(metrics.avgPackagesPerHour, 1)} pacotes/hora\n` +
     `🛣 *Km Rodados:* ${formatKm(metrics.totalKm)}\n` +
     `⏱ *Dias Trabalhados:* ${metrics.daysWorked}\n` +
     `💰 *Faturamento Bruto:* ${formatCurrency(metrics.totalGross)}\n` +

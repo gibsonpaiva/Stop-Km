@@ -351,6 +351,7 @@ function updateLivePreview() {
   const previewEfficiency = document.getElementById('preview-efficiency');
   const previewDensity = document.getElementById('preview-density');
   const previewRateTag = document.getElementById('preview-rate-tag');
+  const previewPackagesHour = document.getElementById('preview-packages-hour');
 
   if (previewGross) previewGross.textContent = formatCurrency(metrics.grossEarnings);
   if (previewNet) previewNet.textContent = formatCurrency(metrics.netProfit);
@@ -358,6 +359,7 @@ function updateLivePreview() {
   if (previewTime) previewTime.textContent = metrics.durationFormatted;
   if (previewEfficiency) previewEfficiency.textContent = `${formatCurrency(metrics.efficiencyPerKm)}/km`;
   if (previewDensity) previewDensity.textContent = `${formatNumber(metrics.densityPerStop, 1)} pct`;
+  if (previewPackagesHour) previewPackagesHour.textContent = `${formatNumber(metrics.packagesPerHour, 1)} pct/h`;
   if (previewRateTag) {
     previewRateTag.textContent = metrics.isSundayRate ? `R$ ${formatNumber(sundayRate, 2)} (Domingo)` : `R$ ${formatNumber(baseRate, 2)}/pct`;
   }
@@ -466,6 +468,7 @@ export function renderDashboard() {
   setElText('kpi-gross-revenue', formatCurrency(metrics.totalGross));
   setElText('kpi-total-km', formatKm(metrics.totalKm));
   setElText('kpi-total-packages', `${metrics.totalPackages.toLocaleString('pt-BR')} un`);
+  setElText('kpi-packages-hour', `${formatNumber(metrics.avgPackagesPerHour, 1)} pct/h`);
   setElText('kpi-efficiency-km', `${formatCurrency(metrics.avgEarningsPerKm)}/km`);
   setElText('kpi-fuel-total', formatCurrency(metrics.totalFuel));
   setElText('kpi-days-count', `${metrics.daysWorked} ${metrics.daysWorked === 1 ? 'dia' : 'dias'} em rota`);
@@ -505,6 +508,7 @@ export function renderHistory() {
   routes.forEach((route) => {
     const isSun = Boolean(route.isSundayRate);
     const dateFormatted = formatDateBR(route.date);
+    const pacePerHour = route.packagesPerHour ? formatNumber(route.packagesPerHour, 1) : (route.durationHours > 0 ? formatNumber(route.packages / route.durationHours, 1) : '0');
 
     html += `
       <div class="larq-card-white p-4 relative" data-id="${route.id}">
@@ -516,9 +520,10 @@ export function renderHistory() {
               ${route.date.substring(8, 10)}
             </div>
             <div>
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="text-xs font-bold text-[#0F2942]">${dateFormatted}</span>
                 ${isSun ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">DOMINGO</span>' : ''}
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-[#25A4DC] border border-sky-100">${pacePerHour} pct/h</span>
               </div>
               <span class="text-[10px] text-slate-400 font-medium">${route.dayOfWeek} • ${route.startTime} às ${route.endTime} (${route.durationFormatted})</span>
             </div>

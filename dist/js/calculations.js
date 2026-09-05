@@ -147,6 +147,9 @@ export function calculateRouteMetrics(data) {
   const hourlyGross = decimalHours > 0 ? grossEarnings / decimalHours : 0;
   const hourlyNet = decimalHours > 0 ? netProfit / decimalHours : 0;
 
+  // 10. Ritmo Operacional: Pacotes por Hora
+  const packagesPerHour = decimalHours > 0 ? Number((numPackages / decimalHours).toFixed(1)) : 0;
+
   return {
     date,
     dayOfWeek: getDayOfWeekName(date),
@@ -165,6 +168,7 @@ export function calculateRouteMetrics(data) {
     fuelCostPerKm,
     hourlyGross,
     hourlyNet,
+    packagesPerHour,
     totalMinutes,
     decimalHours,
     durationFormatted,
