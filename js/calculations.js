@@ -171,6 +171,7 @@ export function calculateRouteMetrics(data) {
     packagesPerHour,
     totalMinutes,
     decimalHours,
+    durationHours: decimalHours,
     durationFormatted,
     efficiencyPerKm,
     densityPerStop

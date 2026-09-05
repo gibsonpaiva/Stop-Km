@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .register('./sw.js')
       .then((reg) => {
         console.log('StopKm PWA Service Worker registrado:', reg.scope);
+        reg.update().catch(() => {});
       })
       .catch((err) => {
         console.warn('Erro ao registrar Service Worker:', err);

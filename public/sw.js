@@ -3,7 +3,7 @@
  * Compatível com iOS Safari / WebKit e Vercel CleanUrls
  */
 
-const CACHE_NAME = 'stopkm-cache-v4';
+const CACHE_NAME = 'stopkm-cache-v5';
 const ASSETS_TO_CACHE = [
   '/',
   './manifest.json',
@@ -89,7 +89,32 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // 4. Recursos estáticos locais (CSS, JS, imagens, ícones)
+  // 4. Scripts JS e Estilos CSS: Network-First com Fallback para Cache
+  // Garante que novidades e correções cheguem imediatamente no iPhone/PWA
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    e.respondWith(
+      fetch(e.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(e.request, clone);
+            });
+          }
+          return cleanRedirectResponse(networkResponse);
+        })
+        .catch(async () => {
+          const cached = await caches.match(e.request) || await caches.match(url.pathname);
+          if (cached) {
+            return cleanRedirectResponse(cached);
+          }
+          return new Response('Offline resource', { status: 503, statusText: 'Offline' });
+        })
+    );
+    return;
+  }
+
+  // 5. Demais recursos estáticos locais (imagens, ícones, manifest)
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -97,8 +122,9 @@ self.addEventListener('fetch', (e) => {
         fetch(e.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
+              const clone = networkResponse.clone();
               caches.open(CACHE_NAME).then((cache) => {
-                cache.put(e.request, networkResponse);
+                cache.put(e.request, clone);
               });
             }
           })
