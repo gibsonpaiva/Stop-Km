@@ -3,8 +3,11 @@
  * Suporte a persistência remota, histórico ilimitado e sincronização local-first.
  */
 
-export const DEFAULT_SUPABASE_URL = 'https://eugkvjulxnyvywxhmchv.supabase.co';
-export const DEFAULT_PUBLISHABLE_KEY = 'sb_publishable_WSmgvbj4N7q_EBEb054IIA_DSYE6bRj';
+const envUrl = (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__.NEXT_PUBLIC_SUPABASE_URL) || '';
+const envKey = (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) || '';
+
+export const DEFAULT_SUPABASE_URL = envUrl;
+export const DEFAULT_PUBLISHABLE_KEY = envKey;
 
 const STORAGE_SUPABASE_URL = 'STOPKM_SUPABASE_URL';
 const STORAGE_SUPABASE_KEY = 'STOPKM_SUPABASE_KEY';
@@ -26,11 +29,15 @@ export function sanitizeSupabaseUrl(url) {
  * Obtém a configuração salva do Supabase.
  */
 export function getSupabaseConfig() {
+  const currentEnvUrl = (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__.NEXT_PUBLIC_SUPABASE_URL) || DEFAULT_SUPABASE_URL;
+  const currentEnvKey = (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) || DEFAULT_PUBLISHABLE_KEY;
   const savedUrl = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_SUPABASE_URL) : '';
-  const url = sanitizeSupabaseUrl(savedUrl || DEFAULT_SUPABASE_URL);
+  const savedKey = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_SUPABASE_KEY) : '';
+  const url = sanitizeSupabaseUrl(savedUrl || currentEnvUrl || '');
+  const publishableKey = (savedKey || currentEnvKey || '').trim();
   return {
     url,
-    publishableKey: (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_SUPABASE_KEY) : '') || DEFAULT_PUBLISHABLE_KEY
+    publishableKey
   };
 }
 

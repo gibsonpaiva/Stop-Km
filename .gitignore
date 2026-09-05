@@ -3,3 +3,8 @@ node_modules/
 Thumbs.db
 *.log
 local-server.js
+.env
+.env.*
+env.js
+dist/env.js
+public/env.js
