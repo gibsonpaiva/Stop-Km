@@ -482,7 +482,23 @@ export function renderHistory() {
   const countBadge = document.getElementById('history-count-badge');
   if (!container) return;
 
-  const routes = getRoutes();
+  const rawRoutes = getRoutes();
+  const routes = [...rawRoutes].sort((a, b) => {
+    const dateA = (a.date || '').trim();
+    const dateB = (b.date || '').trim();
+    if (dateA !== dateB) return dateB.localeCompare(dateA);
+
+    const timeA = (a.startTime || '').trim();
+    const timeB = (b.startTime || '').trim();
+    if (timeA !== timeB) return timeB.localeCompare(timeA);
+
+    const tsA = new Date(a.createdAt || a.updatedAt || 0).getTime() || 0;
+    const tsB = new Date(b.createdAt || b.updatedAt || 0).getTime() || 0;
+    if (tsB !== tsA) return tsB - tsA;
+
+    return (b.id || '').localeCompare(a.id || '');
+  });
+
   if (countBadge) countBadge.textContent = `${routes.length} rotas`;
 
   if (routes.length === 0) {

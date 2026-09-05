@@ -221,13 +221,22 @@ export async function fetchRoutesFromSupabase() {
       return [];
     }
 
-    let query = client.from('routes').select('*').order('date', { ascending: false }).eq('user_id', user.id);
+    let query = client.from('routes')
+      .select('*')
+      .order('date', { ascending: false })
+      .order('start_time', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false, nullsFirst: false })
+      .eq('user_id', user.id);
 
     const { data, error } = await query;
     if (error) {
       // Se a coluna user_id ainda não tiver sido adicionada no SQL pelo usuário, tenta fallback
       if (error.message && error.message.includes('column routes.user_id does not exist')) {
-        const fallback = await client.from('routes').select('*').order('date', { ascending: false });
+        const fallback = await client.from('routes')
+          .select('*')
+          .order('date', { ascending: false })
+          .order('start_time', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false, nullsFirst: false });
         if (!fallback.error && Array.isArray(fallback.data)) {
           return fallback.data.map(dbRowToRoute);
         }

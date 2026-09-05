@@ -82,12 +82,21 @@ export function getRoutes() {
     const list = JSON.parse(raw);
     if (!Array.isArray(list)) return [];
 
-    // Ordenação estrita: Data decrescente (YYYY-MM-DD), depois Horário de Saída
+    // Ordenação rigorosa: Mais recentes primeiro (Data decrescente, Horário de saída decrescente, Criação decrescente)
     return list.sort((a, b) => {
-      if (b.date !== a.date) {
-        return b.date.localeCompare(a.date);
-      }
-      return (b.startTime || '').localeCompare(a.startTime || '');
+      const dateA = (a.date || '').trim();
+      const dateB = (b.date || '').trim();
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+
+      const timeA = (a.startTime || '').trim();
+      const timeB = (b.startTime || '').trim();
+      if (timeA !== timeB) return timeB.localeCompare(timeA);
+
+      const tsA = new Date(a.createdAt || a.updatedAt || 0).getTime() || 0;
+      const tsB = new Date(b.createdAt || b.updatedAt || 0).getTime() || 0;
+      if (tsB !== tsA) return tsB - tsA;
+
+      return (b.id || '').localeCompare(a.id || '');
     });
   } catch (err) {
     console.error('Erro ao ler LocalStorage:', err);
@@ -97,11 +106,27 @@ export function getRoutes() {
 
 /**
  * Salva a lista de rotas no LocalStorage vinculada ao usuário logado.
+ * Garante que os dados fiquem salvos rigorosamente com os mais recentes primeiro.
  * @param {Array<Object>} routes 
  */
 function saveRoutes(routes) {
   if (!currentUserId) return;
-  localStorage.setItem(getStorageKey(), JSON.stringify(routes));
+  const sorted = [...routes].sort((a, b) => {
+    const dateA = (a.date || '').trim();
+    const dateB = (b.date || '').trim();
+    if (dateA !== dateB) return dateB.localeCompare(dateA);
+
+    const timeA = (a.startTime || '').trim();
+    const timeB = (b.startTime || '').trim();
+    if (timeA !== timeB) return timeB.localeCompare(timeA);
+
+    const tsA = new Date(a.createdAt || a.updatedAt || 0).getTime() || 0;
+    const tsB = new Date(b.createdAt || b.updatedAt || 0).getTime() || 0;
+    if (tsB !== tsA) return tsB - tsA;
+
+    return (b.id || '').localeCompare(a.id || '');
+  });
+  localStorage.setItem(getStorageKey(), JSON.stringify(sorted));
   notifyListeners();
 }
 
@@ -180,7 +205,7 @@ export function addRoute(rawData) {
     ...metrics
   };
 
-  routes.push(newRoute);
+  routes.unshift(newRoute);
   saveRoutes(routes);
 
   if (isSupabaseConfigured()) {
