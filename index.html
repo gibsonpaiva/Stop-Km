@@ -1192,19 +1192,19 @@ input:checked + .larq-slider:before {
   </div>
 
   <!-- Modal Visualizador de Fotos dos Pacotes (Lightbox) -->
-  <div id="modal-photo-viewer" class="hidden fixed inset-0 z-50 flex-col items-center justify-between p-4 bg-slate-950/90 backdrop-blur-md">
+  <div id="modal-photo-viewer" class="hidden fixed inset-0 z-50 flex-col items-center justify-between px-4 bg-slate-950/90 backdrop-blur-md" style="padding-top: max(calc(env(safe-area-inset-top, 0px) + 20px), 64px); padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 20px), 28px);">
     <!-- Topo do Visualizador -->
-    <div class="w-full max-w-2xl flex items-center justify-between text-white py-2">
-      <div>
-        <h4 id="photo-viewer-title" class="text-sm font-extrabold tracking-tight">Fotos da Rota</h4>
-        <span id="photo-viewer-counter" class="text-[11px] text-sky-300 font-semibold">Foto 1 de 1</span>
+    <div class="w-full max-w-2xl flex items-center justify-between gap-3 text-white py-2">
+      <div class="min-w-0 flex-1">
+        <h4 id="photo-viewer-title" class="text-sm font-extrabold tracking-tight truncate">Fotos da Rota</h4>
+        <span id="photo-viewer-counter" class="text-[11px] text-sky-300 font-semibold block">Foto 1 de 1</span>
       </div>
-      <div class="flex items-center gap-2">
-        <a id="photo-viewer-download" href="#" download="pacote-stopkm.jpg" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-colors">
-          <svg class="w-3.5 h-3.5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <a id="photo-viewer-download" href="#" download="pacote-stopkm.jpg" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors">
+          <svg class="w-3.5 h-3.5 text-[#25A4DC] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           <span>Abrir / Baixar</span>
         </a>
-        <button type="button" id="btn-close-photo-viewer" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center font-bold text-sm transition-colors">✕</button>
+        <button type="button" id="btn-close-photo-viewer" class="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 transition-colors">✕</button>
       </div>
     </div>
 
