@@ -107,6 +107,110 @@ export function getSupabaseClient() {
   }
 }
 
+const STORAGE_BUCKET_PHOTOS = 'route-photos';
+
+/**
+ * Converte Data URL (base64) em Blob para envio ao Supabase Storage.
+ */
+function dataUrlToBlob(dataUrl) {
+  const parts = dataUrl.split(',');
+  const mimeMatch = parts[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+  const bstr = atob(parts[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+/**
+ * Faz upload de uma foto (Data URL ou Blob) para o bucket 'route-photos' no Supabase Storage.
+ * Caso o bucket ainda não exista ou esteja offline, mantém o Data URL comprimido como fallback seguro.
+ */
+export async function uploadRoutePhotoToSupabase(photoItem, routeId = 'route') {
+  const rawUrl = typeof photoItem === 'string' ? photoItem : (photoItem?.url || '');
+  if (!rawUrl) return null;
+
+  // Se já for uma URL pública do Supabase (http/https), retorna diretamente
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+    return typeof photoItem === 'object' ? { ...photoItem, url: rawUrl } : {
+      id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      url: rawUrl,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  const client = getSupabaseClient();
+  if (!client || !rawUrl.startsWith('data:image/')) {
+    return typeof photoItem === 'object' ? photoItem : {
+      id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      url: rawUrl,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  try {
+    const user = await getCurrentUser();
+    const userFolder = user && user.id ? user.id : 'anon';
+    const photoId = (typeof photoItem === 'object' && photoItem.id)
+      ? photoItem.id
+      : ('photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
+    const filePath = `${userFolder}/${routeId}/${photoId}.jpg`;
+    const blob = dataUrlToBlob(rawUrl);
+
+    const { error: uploadError } = await client.storage
+      .from(STORAGE_BUCKET_PHOTOS)
+      .upload(filePath, blob, {
+        contentType: blob.type || 'image/jpeg',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.warn('Aviso Storage Supabase (usando fallback compacto no banco):', uploadError.message);
+      return typeof photoItem === 'object' ? photoItem : {
+        id: photoId,
+        url: rawUrl,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    const { data: publicData } = client.storage
+      .from(STORAGE_BUCKET_PHOTOS)
+      .getPublicUrl(filePath);
+
+    const finalUrl = (publicData && publicData.publicUrl) ? publicData.publicUrl : rawUrl;
+    return {
+      id: photoId,
+      url: finalUrl,
+      createdAt: (typeof photoItem === 'object' && photoItem.createdAt) ? photoItem.createdAt : new Date().toISOString()
+    };
+  } catch (err) {
+    console.warn('Falha ao subir imagem no Storage, mantendo imagem otimizada:', err);
+    return typeof photoItem === 'object' ? photoItem : {
+      id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      url: rawUrl,
+      createdAt: new Date().toISOString()
+    };
+  }
+}
+
+/**
+ * Garante que todas as fotos de uma rota estejam sincronizadas no Supabase Storage.
+ */
+export async function ensureRoutePhotosUploaded(photos = [], routeId = 'route') {
+  if (!Array.isArray(photos) || photos.length === 0) return [];
+  const uploaded = [];
+  for (const item of photos) {
+    const res = await uploadRoutePhotoToSupabase(item, routeId);
+    if (res && res.url) {
+      uploaded.push(res);
+    }
+  }
+  return uploaded;
+}
+
 /**
  * Mapeia um objeto de rota do formato interno JS (camelCase) para colunas do Postgres (snake_case).
  */
@@ -136,6 +240,8 @@ export function routeToDbRow(route, userId = null) {
     hourly_gross: typeof route.hourlyGross === 'number' ? route.hourlyGross : 0,
     hourly_net: typeof route.hourlyNet === 'number' ? route.hourlyNet : 0,
     packages_per_hour: typeof route.packagesPerHour === 'number' ? route.packagesPerHour : 0,
+    notes: typeof route.notes === 'string' ? route.notes.trim() : '',
+    photos: Array.isArray(route.photos) ? route.photos : [],
     created_at: route.createdAt || new Date().toISOString(),
     updated_at: route.updatedAt || new Date().toISOString()
   };
@@ -156,6 +262,17 @@ export function dbRowToRoute(row) {
   const packagesPerHour = row.packages_per_hour !== undefined && row.packages_per_hour !== null
     ? Number(row.packages_per_hour)
     : (durationHours > 0 ? Number((packages / durationHours).toFixed(1)) : 0);
+
+  let parsedPhotos = [];
+  if (Array.isArray(row.photos)) {
+    parsedPhotos = row.photos;
+  } else if (typeof row.photos === 'string' && row.photos.trim().startsWith('[')) {
+    try {
+      parsedPhotos = JSON.parse(row.photos);
+    } catch (e) {
+      parsedPhotos = [];
+    }
+  }
 
   return {
     id: row.id,
@@ -184,6 +301,8 @@ export function dbRowToRoute(row) {
     hourlyGross: Number(row.hourly_gross) || 0,
     hourlyNet: Number(row.hourly_net) || 0,
     packagesPerHour,
+    notes: typeof row.notes === 'string' ? row.notes : '',
+    photos: parsedPhotos,
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString()
   };
@@ -261,7 +380,12 @@ export async function upsertRouteToSupabase(route) {
 
   try {
     const user = await getCurrentUser();
-    const row = routeToDbRow(route, user ? user.id : null);
+    let routeToSave = { ...route };
+    if (Array.isArray(route.photos) && route.photos.length > 0) {
+      routeToSave.photos = await ensureRoutePhotosUploaded(route.photos, route.id);
+    }
+
+    const row = routeToDbRow(routeToSave, user ? user.id : null);
     let { error } = await client
       .from('routes')
       .upsert(row, { onConflict: 'id' });
@@ -269,12 +393,14 @@ export async function upsertRouteToSupabase(route) {
     if (error && error.message && error.message.includes('does not exist')) {
       if (error.message.includes('packages_per_hour')) delete row.packages_per_hour;
       if (error.message.includes('user_id')) delete row.user_id;
+      if (error.message.includes('photos')) delete row.photos;
+      if (error.message.includes('notes')) delete row.notes;
       const res = await client.from('routes').upsert(row, { onConflict: 'id' });
       error = res.error;
     }
 
     if (error) throw error;
-    return true;
+    return routeToSave.photos || [];
   } catch (err) {
     console.error(`Erro ao salvar rota ${route.id} no Supabase:`, err);
     return false;
@@ -369,7 +495,17 @@ export async function syncAllLocalToSupabase(localRoutes) {
   try {
     const user = await getCurrentUser();
     const userId = user ? user.id : null;
-    let rows = localRoutes.map((r) => routeToDbRow(r, userId));
+
+    const processedRoutes = [];
+    for (const r of localRoutes) {
+      const clone = { ...r };
+      if (Array.isArray(clone.photos) && clone.photos.length > 0) {
+        clone.photos = await ensureRoutePhotosUploaded(clone.photos, clone.id);
+      }
+      processedRoutes.push(clone);
+    }
+
+    let rows = processedRoutes.map((r) => routeToDbRow(r, userId));
     let { error } = await client
       .from('routes')
       .upsert(rows, { onConflict: 'id' });
@@ -379,6 +515,8 @@ export async function syncAllLocalToSupabase(localRoutes) {
         const clone = { ...r };
         if (error.message.includes('packages_per_hour')) delete clone.packages_per_hour;
         if (error.message.includes('user_id')) delete clone.user_id;
+        if (error.message.includes('photos')) delete clone.photos;
+        if (error.message.includes('notes')) delete clone.notes;
         return clone;
       });
       const res = await client.from('routes').upsert(rows, { onConflict: 'id' });
@@ -386,7 +524,7 @@ export async function syncAllLocalToSupabase(localRoutes) {
     }
 
     if (error) throw error;
-    return { success: true, count: rows.length };
+    return { success: true, count: rows.length, routes: processedRoutes };
   } catch (err) {
     console.error('Erro ao sincronizar todas as rotas no Supabase:', err);
     return { success: false, count: 0, error: err.message || String(err) };

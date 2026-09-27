@@ -1,3 +1,5 @@
 local-server.js
+start.js
 abrir-app.bat
+Iniciar-StopKm.command
 supabase_schema.sql

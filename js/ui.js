@@ -54,10 +54,16 @@ let editingRouteId = null;
 let dashboardPeriodFilter = 'today';
 let receiptPeriodFilter = 'today';
 let pendingDeleteId = null;
+let currentFormPhotos = [];
+let viewerPhotos = [];
+let viewerCurrentIndex = 0;
+let viewerRouteTitle = '';
+let quickAddPhotoRouteId = null;
 
 export function initUI() {
   setupNavigation();
   setupFormListeners();
+  setupPhotoUploadListeners();
   setupDashboardFilters();
   setupReceiptFilters();
   setupModals();
@@ -307,6 +313,304 @@ function setupFormListeners() {
   }
 }
 
+/**
+ * Comprime e redimensiona a foto capturada pela câmera ou galeria para envio rápido ao Supabase.
+ */
+function compressImageFile(file, maxDimension = 1280, quality = 0.78) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width >= height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve({
+          id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          url: dataUrl,
+          createdAt: new Date().toISOString()
+        });
+      };
+      img.onerror = () => reject(new Error('Falha ao processar imagem.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Falha ao ler arquivo de imagem.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function getPhotoUrl(item) {
+  if (!item) return '';
+  return typeof item === 'string' ? item : (item.url || '');
+}
+
+function setupPhotoUploadListeners() {
+  const btnTakePhoto = document.getElementById('btn-take-photo');
+  const btnUploadPhoto = document.getElementById('btn-upload-photo');
+  const inputCamera = document.getElementById('input-photo-camera');
+  const inputGallery = document.getElementById('input-photo-gallery');
+
+  btnTakePhoto?.addEventListener('click', () => {
+    triggerHaptic('light');
+    quickAddPhotoRouteId = null;
+    inputCamera?.click();
+  });
+
+  btnUploadPhoto?.addEventListener('click', () => {
+    triggerHaptic('light');
+    quickAddPhotoRouteId = null;
+    inputGallery?.click();
+  });
+
+  const handleFilesSelected = async (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+
+    showToast(files.length > 1 ? `Processando ${files.length} fotos...` : 'Processando foto do pacote...', 'info');
+
+    const processed = [];
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+      try {
+        const compressed = await compressImageFile(file);
+        processed.push(compressed);
+      } catch (err) {
+        console.error('Erro ao comprimir foto:', err);
+      }
+    }
+
+    if (processed.length === 0) {
+      showToast('Não foi possível processar a imagem selecionada.', 'error');
+      return;
+    }
+
+    // Se foi acionado pelo botão rápido "+ Foto" direto em um card do Histórico
+    if (quickAddPhotoRouteId) {
+      const targetRoute = getRouteById(quickAddPhotoRouteId);
+      const routeIdToUpdate = quickAddPhotoRouteId;
+      quickAddPhotoRouteId = null;
+
+      if (targetRoute) {
+        const existingPhotos = Array.isArray(targetRoute.photos) ? targetRoute.photos : [];
+        const updatedPhotos = [...existingPhotos, ...processed];
+        updateRoute(routeIdToUpdate, {
+          ...targetRoute,
+          photos: updatedPhotos
+        });
+        triggerHaptic('success');
+        showToast('Foto anexada à rota e enviada para a nuvem!', 'success');
+        updateAllViews();
+      }
+      return;
+    }
+
+    // Fluxo normal no formulário de lançamento/edição
+    currentFormPhotos = [...currentFormPhotos, ...processed];
+    renderFormPhotosPreview();
+    triggerHaptic('success');
+    showToast(
+      processed.length === 1 ? 'Foto anexada à rota!' : `${processed.length} fotos anexadas à rota!`,
+      'success'
+    );
+  };
+
+  inputCamera?.addEventListener('change', (e) => {
+    handleFilesSelected(e.target.files);
+    e.target.value = '';
+  });
+
+  inputGallery?.addEventListener('change', (e) => {
+    handleFilesSelected(e.target.files);
+    e.target.value = '';
+  });
+}
+
+function renderFormPhotosPreview() {
+  const previewContainer = document.getElementById('form-photos-preview');
+  const countBadge = document.getElementById('form-photos-count');
+  if (!previewContainer) return;
+
+  const count = currentFormPhotos.length;
+  if (countBadge) {
+    countBadge.textContent = `${count} ${count === 1 ? 'foto' : 'fotos'}`;
+  }
+
+  if (count === 0) {
+    previewContainer.innerHTML = '';
+    previewContainer.classList.add('hidden');
+    return;
+  }
+
+  previewContainer.classList.remove('hidden');
+
+  let html = '';
+  currentFormPhotos.forEach((item, idx) => {
+    const url = getPhotoUrl(item);
+    html += `
+      <div class="relative group aspect-square rounded-2xl overflow-hidden border border-sky-100 bg-[#EEF4FA] shadow-sm">
+        <img src="${url}" alt="Foto pacote ${idx + 1}" data-idx="${idx}" class="form-photo-thumb w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity">
+        <button type="button" data-remove-idx="${idx}" class="btn-remove-form-photo absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-bold flex items-center justify-center shadow-md">
+          ✕
+        </button>
+      </div>
+    `;
+  });
+
+  previewContainer.innerHTML = html;
+
+  previewContainer.querySelectorAll('.form-photo-thumb').forEach((imgEl) => {
+    imgEl.addEventListener('click', () => {
+      const idx = parseInt(imgEl.getAttribute('data-idx'), 10) || 0;
+      const dateVal = document.getElementById('input-date')?.value || getLocalIsoDate();
+      openPhotoViewer(currentFormPhotos, idx, `Fotos da Rota (${formatDateBR(dateVal)})`);
+    });
+  });
+
+  previewContainer.querySelectorAll('.btn-remove-form-photo').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.getAttribute('data-remove-idx'), 10);
+      if (!isNaN(idx)) {
+        currentFormPhotos.splice(idx, 1);
+        renderFormPhotosPreview();
+        triggerHaptic('light');
+      }
+    });
+  });
+}
+
+export function openPhotoViewer(photos, startIndex = 0, title = 'Fotos da Rota') {
+  const validPhotos = (Array.isArray(photos) ? photos : []).filter((p) => Boolean(getPhotoUrl(p)));
+  if (validPhotos.length === 0) return;
+
+  viewerPhotos = validPhotos;
+  viewerCurrentIndex = Math.max(0, Math.min(startIndex, validPhotos.length - 1));
+  viewerRouteTitle = title;
+
+  const modal = document.getElementById('modal-photo-viewer');
+  if (!modal) return;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  triggerHaptic('light');
+  updatePhotoViewerSlide();
+}
+
+function updatePhotoViewerSlide() {
+  const imgEl = document.getElementById('photo-viewer-img');
+  const titleEl = document.getElementById('photo-viewer-title');
+  const counterEl = document.getElementById('photo-viewer-counter');
+  const downloadEl = document.getElementById('photo-viewer-download');
+  const prevBtn = document.getElementById('btn-prev-photo');
+  const nextBtn = document.getElementById('btn-next-photo');
+  const thumbsContainer = document.getElementById('photo-viewer-thumbs');
+
+  if (!viewerPhotos.length) return;
+
+  const currentItem = viewerPhotos[viewerCurrentIndex];
+  const currentUrl = getPhotoUrl(currentItem);
+
+  if (imgEl) imgEl.src = currentUrl;
+  if (titleEl) titleEl.textContent = viewerRouteTitle;
+  if (counterEl) counterEl.textContent = `Foto ${viewerCurrentIndex + 1} de ${viewerPhotos.length}`;
+  if (downloadEl) {
+    downloadEl.href = currentUrl;
+    downloadEl.download = `StopKm_Pacote_${viewerCurrentIndex + 1}.jpg`;
+  }
+
+  if (prevBtn) {
+    prevBtn.style.display = viewerPhotos.length > 1 ? 'flex' : 'none';
+  }
+  if (nextBtn) {
+    nextBtn.style.display = viewerPhotos.length > 1 ? 'flex' : 'none';
+  }
+
+  if (thumbsContainer) {
+    if (viewerPhotos.length <= 1) {
+      thumbsContainer.innerHTML = '';
+    } else {
+      thumbsContainer.innerHTML = viewerPhotos
+        .map((item, idx) => {
+          const url = getPhotoUrl(item);
+          const isActive = idx === viewerCurrentIndex;
+          return `
+            <button type="button" data-thumb-idx="${idx}" class="viewer-thumb-btn w-12 h-12 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+              isActive ? 'border-[#25A4DC] scale-105 shadow-lg' : 'border-white/20 opacity-60 hover:opacity-100'
+            }">
+              <img src="${url}" alt="Miniatura ${idx + 1}" class="w-full h-full object-cover">
+            </button>
+          `;
+        })
+        .join('');
+
+      thumbsContainer.querySelectorAll('.viewer-thumb-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          viewerCurrentIndex = parseInt(btn.getAttribute('data-thumb-idx'), 10) || 0;
+          updatePhotoViewerSlide();
+        });
+      });
+    }
+  }
+}
+
+function closePhotoViewer() {
+  const modal = document.getElementById('modal-photo-viewer');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+let activeNotesRouteId = null;
+
+export function openNotesViewer(route) {
+  if (!route || !route.notes || !route.notes.trim()) return;
+  activeNotesRouteId = route.id;
+
+  const modal = document.getElementById('modal-notes-viewer');
+  const subtitleEl = document.getElementById('notes-viewer-subtitle');
+  const contentEl = document.getElementById('notes-viewer-content');
+
+  if (subtitleEl) {
+    subtitleEl.textContent = `${formatDateBR(route.date)} • ${route.dayOfWeek || ''} (${route.packages} pacotes)`;
+  }
+  if (contentEl) {
+    contentEl.textContent = route.notes.trim();
+  }
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    triggerHaptic('light');
+  }
+}
+
+function closeNotesViewer() {
+  activeNotesRouteId = null;
+  const modal = document.getElementById('modal-notes-viewer');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
 function getFormData() {
   const date = document.getElementById('input-date')?.value || getLocalIsoDate();
   const startTime = document.getElementById('input-start-time')?.value || '08:00';
@@ -317,6 +621,7 @@ function getFormData() {
   const packages = parseInt(document.getElementById('input-packages')?.value, 10) || 0;
   const fuelCost = parseFloat(document.getElementById('input-fuel')?.value) || 0;
   const isSundayRate = document.getElementById('switch-sunday-rate')?.checked || false;
+  const notes = (document.getElementById('input-notes')?.value || '').trim();
 
   return {
     date,
@@ -327,7 +632,9 @@ function getFormData() {
     stops,
     packages,
     fuelCost,
-    isSundayRate
+    isSundayRate,
+    notes,
+    photos: [...currentFormPhotos]
   };
 }
 
@@ -396,8 +703,14 @@ function handleFormSubmit() {
 
 function resetFormToCreateMode() {
   editingRouteId = null;
+  currentFormPhotos = [];
+  renderFormPhotosPreview();
+
   const form = document.getElementById('route-form');
   if (form) form.reset();
+
+  const notesInput = document.getElementById('input-notes');
+  if (notesInput) notesInput.value = '';
 
   const titleEl = document.getElementById('form-mode-title');
   const submitBtnText = document.getElementById('btn-submit-text');
@@ -418,6 +731,8 @@ export function loadRouteForEdit(id) {
   }
 
   editingRouteId = id;
+  currentFormPhotos = Array.isArray(route.photos) ? [...route.photos] : [];
+  renderFormPhotosPreview();
 
   const setVal = (id, val) => {
     const el = document.getElementById(id);
@@ -432,6 +747,7 @@ export function loadRouteForEdit(id) {
   setVal('input-stops', route.stops || '');
   setVal('input-packages', route.packages || '');
   setVal('input-fuel', route.fuelCost || '0');
+  setVal('input-notes', route.notes || '');
 
   const sundaySwitch = document.getElementById('switch-sunday-rate');
   if (sundaySwitch) sundaySwitch.checked = Boolean(route.isSundayRate);
@@ -525,6 +841,48 @@ export function renderHistory() {
     const isSun = Boolean(route.isSundayRate);
     const dateFormatted = formatDateBR(route.date);
     const pacePerHour = route.packagesPerHour ? formatNumber(route.packagesPerHour, 1) : (route.durationHours > 0 ? formatNumber(route.packages / route.durationHours, 1) : '0');
+    const routePhotos = Array.isArray(route.photos) ? route.photos.filter((p) => Boolean(getPhotoUrl(p))) : [];
+    const hasNotes = Boolean(route.notes && route.notes.trim().length > 0);
+
+    let photosSectionHtml = '';
+    if (routePhotos.length > 0) {
+      const thumbsHtml = routePhotos
+        .map((p, pIdx) => {
+          const url = getPhotoUrl(p);
+          return `
+            <button type="button" class="btn-view-route-photo relative w-14 h-14 rounded-xl overflow-hidden border border-sky-100 bg-[#EEF4FA] flex-shrink-0 group shadow-sm" data-id="${route.id}" data-photo-idx="${pIdx}">
+              <img src="${url}" alt="Foto pacote ${pIdx + 1}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+            </button>
+          `;
+        })
+        .join('');
+
+      photosSectionHtml = `
+        <div class="py-2.5 border-t border-slate-100 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[#25A4DC] flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Fotos dos Pacotes (${routePhotos.length})
+            </span>
+            <button type="button" class="btn-view-route-photo text-[10px] font-bold text-[#0F2942] hover:text-[#25A4DC] underline" data-id="${route.id}" data-photo-idx="0">
+              Ver ampliado
+            </button>
+          </div>
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            ${thumbsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    const notesBtnHtml = hasNotes
+      ? `
+        <button type="button" class="btn-view-route-notes px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/70 text-xs font-bold flex items-center gap-1 transition-colors" data-id="${route.id}">
+          <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span>Ver Observação</span>
+        </button>
+      `
+      : '';
 
     html += `
       <div class="larq-card-white p-4 relative" data-id="${route.id}">
@@ -571,17 +929,29 @@ export function renderHistory() {
           </div>
         </div>
 
-        <!-- Ações: Editar e Excluir -->
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-          <button class="btn-edit-route px-3 py-1.5 rounded-lg bg-[#EEF4FA] hover:bg-slate-200 text-[#0F2942] text-xs font-bold flex items-center gap-1" data-id="${route.id}">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            Editar
-          </button>
-          
-          <button class="btn-delete-route px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold flex items-center gap-1" data-id="${route.id}">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            Excluir
-          </button>
+        ${photosSectionHtml}
+
+        <!-- Ações: Anexar Foto, Ver Observação, Editar e Excluir -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button type="button" class="btn-quick-photo-route px-2.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#25A4DC] text-xs font-bold flex items-center gap-1 transition-colors" data-id="${route.id}">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span>+ Foto</span>
+            </button>
+            ${notesBtnHtml}
+          </div>
+
+          <div class="flex items-center gap-2 ml-auto">
+            <button class="btn-edit-route px-3 py-1.5 rounded-lg bg-[#EEF4FA] hover:bg-slate-200 text-[#0F2942] text-xs font-bold flex items-center gap-1" data-id="${route.id}">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              Editar
+            </button>
+            
+            <button class="btn-delete-route px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold flex items-center gap-1" data-id="${route.id}">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Excluir
+            </button>
+          </div>
         </div>
 
       </div>
@@ -589,6 +959,36 @@ export function renderHistory() {
   });
 
   container.innerHTML = html;
+
+  container.querySelectorAll('.btn-view-route-photo').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const photoIdx = parseInt(btn.getAttribute('data-photo-idx'), 10) || 0;
+      const route = getRouteById(id);
+      if (route && Array.isArray(route.photos) && route.photos.length > 0) {
+        openPhotoViewer(route.photos, photoIdx, `Rota de ${formatDateBR(route.date)} (${route.packages} pacotes)`);
+      }
+    });
+  });
+
+  container.querySelectorAll('.btn-view-route-notes').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const route = getRouteById(id);
+      if (route) {
+        openNotesViewer(route);
+      }
+    });
+  });
+
+  container.querySelectorAll('.btn-quick-photo-route').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      quickAddPhotoRouteId = id;
+      triggerHaptic('light');
+      document.getElementById('input-photo-camera')?.click();
+    });
+  });
 
   container.querySelectorAll('.btn-edit-route').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -694,6 +1094,42 @@ function setupModals() {
       showToast('Rota excluída.', 'info');
       closeDeleteModal();
       updateAllViews();
+    }
+  });
+
+  // Controles do Visualizador de Fotos (Lightbox)
+  document.getElementById('btn-close-photo-viewer')?.addEventListener('click', closePhotoViewer);
+  document.getElementById('btn-prev-photo')?.addEventListener('click', () => {
+    if (viewerPhotos.length > 1) {
+      viewerCurrentIndex = (viewerCurrentIndex - 1 + viewerPhotos.length) % viewerPhotos.length;
+      updatePhotoViewerSlide();
+    }
+  });
+  document.getElementById('btn-next-photo')?.addEventListener('click', () => {
+    if (viewerPhotos.length > 1) {
+      viewerCurrentIndex = (viewerCurrentIndex + 1) % viewerPhotos.length;
+      updatePhotoViewerSlide();
+    }
+  });
+  document.getElementById('modal-photo-viewer')?.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-photo-viewer') {
+      closePhotoViewer();
+    }
+  });
+
+  // Controles do Visualizador de Observação
+  document.getElementById('btn-close-notes-viewer')?.addEventListener('click', closeNotesViewer);
+  document.getElementById('btn-ok-notes-viewer')?.addEventListener('click', closeNotesViewer);
+  document.getElementById('btn-edit-from-notes')?.addEventListener('click', () => {
+    const idToEdit = activeNotesRouteId;
+    closeNotesViewer();
+    if (idToEdit) {
+      loadRouteForEdit(idToEdit);
+    }
+  });
+  document.getElementById('modal-notes-viewer')?.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-notes-viewer') {
+      closeNotesViewer();
     }
   });
 }

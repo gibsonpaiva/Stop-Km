@@ -800,6 +800,46 @@ input:checked + .larq-slider:before {
                 </div>
               </div>
 
+              <!-- Fotos dos Pacotes / Comprovantes do Dia -->
+              <div class="pt-2 border-t border-slate-100 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="text-xs md:text-sm font-bold text-[#0F2942] block">Fotos dos Pacotes / Rota</span>
+                    <span class="text-[10px] md:text-xs text-slate-400">Fotografe pacotes, etiquetas ou romaneio do dia</span>
+                  </div>
+                  <span id="form-photos-count" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#EEF4FA] text-[#25A4DC]">0 fotos</span>
+                </div>
+
+                <!-- Botões Câmera e Galeria -->
+                <div class="grid grid-cols-2 gap-2.5">
+                  <button type="button" id="btn-take-photo" class="py-3 px-3 rounded-2xl bg-[#EEF4FA] hover:bg-[#E0F2FE] text-[#0F2942] font-bold text-xs flex items-center justify-center gap-2 border border-sky-100 transition-all active:scale-95 cursor-pointer">
+                    <svg class="w-4 h-4 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Tirar Foto</span>
+                  </button>
+
+                  <button type="button" id="btn-upload-photo" class="py-3 px-3 rounded-2xl bg-[#EEF4FA] hover:bg-[#E0F2FE] text-[#0F2942] font-bold text-xs flex items-center justify-center gap-2 border border-sky-100 transition-all active:scale-95 cursor-pointer">
+                    <svg class="w-4 h-4 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Anexar da Galeria</span>
+                  </button>
+                </div>
+
+                <!-- Inputs ocultos para Câmera Traseira e Galeria -->
+                <input type="file" id="input-photo-camera" accept="image/*" capture="environment" class="hidden">
+                <input type="file" id="input-photo-gallery" accept="image/*" multiple class="hidden">
+
+                <!-- Grid de Miniaturas Anexadas -->
+                <div id="form-photos-preview" class="hidden grid grid-cols-4 sm:grid-cols-5 gap-2 pt-1"></div>
+              </div>
+
+              <!-- Observação da Rota (Opcional) -->
+              <div class="pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label for="input-notes" class="text-xs md:text-sm font-bold text-[#0F2942]">Observação da Rota</label>
+                  <span class="text-[10px] md:text-xs text-slate-400">Opcional</span>
+                </div>
+                <textarea id="input-notes" rows="3" placeholder="Ex: Pacote devolvido, chuva forte, endereço não localizado, anotações do dia..." class="larq-input resize-none leading-relaxed"></textarea>
+              </div>
+
               <!-- Botão Salvar Estilo LARQ -->
               <button type="submit" id="btn-submit-route" class="larq-btn-primary mt-2">
                 <span id="btn-submit-text">Salvar Rota</span>
@@ -1147,6 +1187,68 @@ input:checked + .larq-slider:before {
       <div class="grid grid-cols-2 gap-2 pt-2">
         <button id="btn-cancel-delete" class="py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancelar</button>
         <button id="btn-confirm-delete" class="py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs">Sim, Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Visualizador de Fotos dos Pacotes (Lightbox) -->
+  <div id="modal-photo-viewer" class="hidden fixed inset-0 z-50 flex-col items-center justify-between p-4 bg-slate-950/90 backdrop-blur-md">
+    <!-- Topo do Visualizador -->
+    <div class="w-full max-w-2xl flex items-center justify-between text-white py-2">
+      <div>
+        <h4 id="photo-viewer-title" class="text-sm font-extrabold tracking-tight">Fotos da Rota</h4>
+        <span id="photo-viewer-counter" class="text-[11px] text-sky-300 font-semibold">Foto 1 de 1</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="photo-viewer-download" href="#" download="pacote-stopkm.jpg" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-colors">
+          <svg class="w-3.5 h-3.5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>Abrir / Baixar</span>
+        </a>
+        <button type="button" id="btn-close-photo-viewer" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center font-bold text-sm transition-colors">✕</button>
+      </div>
+    </div>
+
+    <!-- Área Central da Imagem com Setas -->
+    <div class="relative w-full max-w-2xl flex-1 flex items-center justify-center my-2 min-h-0 overflow-hidden">
+      <button type="button" id="btn-prev-photo" class="absolute left-2 z-10 w-10 h-10 rounded-full bg-[#0F2942]/80 hover:bg-[#0F2942] text-white flex items-center justify-center shadow-lg border border-white/15 transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+
+      <img id="photo-viewer-img" src="" alt="Foto do Pacote" class="max-h-[70vh] max-w-full object-contain rounded-2xl shadow-2xl border border-white/10">
+
+      <button type="button" id="btn-next-photo" class="absolute right-2 z-10 w-10 h-10 rounded-full bg-[#0F2942]/80 hover:bg-[#0F2942] text-white flex items-center justify-center shadow-lg border border-white/15 transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Tira de Miniaturas Inferior -->
+    <div id="photo-viewer-thumbs" class="w-full max-w-2xl flex items-center justify-center gap-2 py-2 overflow-x-auto no-scrollbar"></div>
+  </div>
+
+  <!-- Modal de Visualização de Observação da Rota -->
+  <div id="modal-notes-viewer" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="w-full max-w-sm larq-card-white p-5 space-y-3.5 shadow-2xl">
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-[#EEF4FA] text-[#25A4DC] flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-extrabold text-[#0F2942]">Observação da Rota</h3>
+            <span id="notes-viewer-subtitle" class="text-[10px] font-semibold text-slate-400 block"></span>
+          </div>
+        </div>
+        <button type="button" id="btn-close-notes-viewer" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">✕</button>
+      </div>
+
+      <div id="notes-viewer-content" class="p-3.5 rounded-2xl bg-[#EEF4FA] text-xs font-medium text-[#0F2942] whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto"></div>
+
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" id="btn-edit-from-notes" class="py-2.5 rounded-xl bg-[#E5EFF8] hover:bg-sky-100 text-[#0F2942] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors">
+          <svg class="w-3.5 h-3.5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          <span>Editar</span>
+        </button>
+        <button type="button" id="btn-ok-notes-viewer" class="py-2.5 rounded-xl bg-[#0F2942] text-white font-bold text-xs">Fechar</button>
       </div>
     </div>
   </div>

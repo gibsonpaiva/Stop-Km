@@ -202,6 +202,8 @@ export function addRoute(rawData) {
     createdAt: new Date().toISOString(),
     baseRate,
     sundayRate,
+    notes: (rawData.notes || '').trim(),
+    photos: Array.isArray(rawData.photos) ? rawData.photos : [],
     ...metrics
   };
 
@@ -209,7 +211,18 @@ export function addRoute(rawData) {
   saveRoutes(routes);
 
   if (isSupabaseConfigured()) {
-    upsertRouteToSupabase(newRoute).catch((err) => console.error('Erro sync Supabase addRoute:', err));
+    upsertRouteToSupabase(newRoute)
+      .then((uploadedPhotos) => {
+        if (Array.isArray(uploadedPhotos) && uploadedPhotos.length > 0) {
+          const currentList = getRoutes();
+          const idx = currentList.findIndex((r) => r.id === newRoute.id);
+          if (idx !== -1) {
+            currentList[idx].photos = uploadedPhotos;
+            saveRoutes(currentList);
+          }
+        }
+      })
+      .catch((err) => console.error('Erro sync Supabase addRoute:', err));
   }
 
   return newRoute;
@@ -241,11 +254,21 @@ export function updateRoute(id, updatedData) {
     sundayRate
   });
 
+  const photos = Array.isArray(updatedData.photos)
+    ? updatedData.photos
+    : (Array.isArray(existing.photos) ? existing.photos : []);
+
+  const notes = updatedData.notes !== undefined
+    ? String(updatedData.notes || '').trim()
+    : String(existing.notes || '').trim();
+
   const updated = {
     ...existing,
     ...metrics,
     baseRate,
     sundayRate,
+    notes,
+    photos,
     updatedAt: new Date().toISOString()
   };
 
@@ -253,7 +276,18 @@ export function updateRoute(id, updatedData) {
   saveRoutes(routes);
 
   if (isSupabaseConfigured()) {
-    upsertRouteToSupabase(updated).catch((err) => console.error('Erro sync Supabase updateRoute:', err));
+    upsertRouteToSupabase(updated)
+      .then((uploadedPhotos) => {
+        if (Array.isArray(uploadedPhotos) && uploadedPhotos.length > 0) {
+          const currentList = getRoutes();
+          const idx = currentList.findIndex((r) => r.id === id);
+          if (idx !== -1) {
+            currentList[idx].photos = uploadedPhotos;
+            saveRoutes(currentList);
+          }
+        }
+      })
+      .catch((err) => console.error('Erro sync Supabase updateRoute:', err));
   }
 
   return updated;
@@ -496,6 +530,7 @@ export function importDataFromJSON(jsonString) {
         validRoutes.push({
           id: r.id || 'route_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
           createdAt: r.createdAt || new Date().toISOString(),
+          photos: Array.isArray(r.photos) ? r.photos : [],
           ...metrics
         });
       }
@@ -557,6 +592,7 @@ export function seedSampleDataIfEmpty(force = false) {
     sampleEntries.push({
       id: 'route_sample_' + i + '_' + Date.now(),
       createdAt: new Date().toISOString(),
+      photos: [],
       ...metrics
     });
   }
@@ -616,7 +652,11 @@ export async function syncWithSupabase() {
         const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime();
         const remoteTime = new Date(r.updatedAt || r.createdAt || 0).getTime();
         if (remoteTime > localTime) {
-          routeMap.set(r.id, r);
+          // Se o local tinha fotos que o remoto ainda não tinha recebido, preserva
+          const mergedPhotos = (Array.isArray(r.photos) && r.photos.length > 0)
+            ? r.photos
+            : (Array.isArray(local.photos) ? local.photos : []);
+          routeMap.set(r.id, { ...r, photos: mergedPhotos });
         }
       }
     });
@@ -628,6 +668,10 @@ export async function syncWithSupabase() {
     const syncRes = await syncAllLocalToSupabase(mergedRoutes);
     if (!syncRes.success) {
       return { success: false, count: mergedRoutes.length, message: syncRes.error || 'Erro no envio em lote ao Supabase.' };
+    }
+
+    if (Array.isArray(syncRes.routes)) {
+      saveRoutes(syncRes.routes);
     }
 
     return {

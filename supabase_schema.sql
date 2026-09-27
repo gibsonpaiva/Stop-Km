@@ -1,5 +1,5 @@
 -- ==============================================================================
--- STOPKM - ESTRUTURA DO BANCO DE DADOS SUPABASE (MULTI-USUÁRIO / RLS)
+-- STOPKM - ESTRUTURA DO BANCO DE DADOS E STORAGE SUPABASE (MULTI-USUÁRIO / RLS)
 -- Execute este script no menu "SQL Editor" do seu painel Supabase
 -- ==============================================================================
 
@@ -30,13 +30,17 @@ CREATE TABLE IF NOT EXISTS public.routes (
     hourly_gross NUMERIC DEFAULT 0,
     hourly_net NUMERIC DEFAULT 0,
     packages_per_hour NUMERIC DEFAULT 0,
+    notes TEXT DEFAULT '',
+    photos JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Adiciona user_id e packages_per_hour caso a tabela já existisse sem as colunas
+-- Adiciona colunas caso a tabela já existisse anteriormente
 ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS packages_per_hour NUMERIC DEFAULT 0;
+ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '';
+ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS photos JSONB DEFAULT '[]'::jsonb;
 
 -- Índices para buscas rápidas por usuário, data e criação
 CREATE INDEX IF NOT EXISTS idx_routes_user_id ON public.routes(user_id);
@@ -79,3 +83,35 @@ FOR ALL
 TO anon, authenticated
 USING (true) 
 WITH CHECK (true);
+
+-- ==============================================================================
+-- 5. SUPABASE STORAGE: BUCKET PARA FOTOS DOS PACOTES (route-photos)
+-- ==============================================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('route-photos', 'route-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Políticas de acesso ao Storage (Bucket route-photos)
+DROP POLICY IF EXISTS "Leitura pública de fotos de rotas" ON storage.objects;
+CREATE POLICY "Leitura pública de fotos de rotas"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'route-photos');
+
+DROP POLICY IF EXISTS "Upload de fotos por usuários autenticados" ON storage.objects;
+CREATE POLICY "Upload de fotos por usuários autenticados"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'route-photos');
+
+DROP POLICY IF EXISTS "Atualização de fotos por usuários autenticados" ON storage.objects;
+CREATE POLICY "Atualização de fotos por usuários autenticados"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'route-photos');
+
+DROP POLICY IF EXISTS "Exclusão de fotos por usuários autenticados" ON storage.objects;
+CREATE POLICY "Exclusão de fotos por usuários autenticados"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'route-photos');

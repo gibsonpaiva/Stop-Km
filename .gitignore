@@ -5,6 +5,7 @@ Thumbs.db
 local-server.js
 .env
 .env.*
+*.env
 env.js
 dist/env.js
 public/env.js
