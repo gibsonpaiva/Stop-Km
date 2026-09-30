@@ -11,8 +11,8 @@
   <title>StopKm - Controle de Entregas</title>
 
   <link rel="manifest" href="./manifest.json">
-  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
-  <link rel="apple-touch-icon" href="./assets/logo.svg">
+  <link rel="icon" type="image/png" href="./assets/icon-logo.png?v=2">
+  <link rel="apple-touch-icon" href="./assets/icon-logo.png?v=2">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -564,8 +564,8 @@ input:checked + .larq-slider:before {
       <div class="hidden md:flex max-w-6xl mx-auto px-6 py-3.5 items-center justify-between border-b border-white/10">
         <!-- Logo e Identidade -->
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-2xl bg-white text-[#0F2942] flex items-center justify-center shadow font-black">
-            <svg class="w-5 h-5 text-[#0F2942]" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <div class="w-9 h-9 rounded-2xl bg-[#0F2942] flex items-center justify-center shadow overflow-hidden">
+            <img src="./assets/icon-logo.png?v=2" alt="StopKm" class="w-full h-full object-cover">
           </div>
           <div>
             <div class="text-lg font-extrabold tracking-tight text-white leading-tight">StopKm</div>
@@ -624,12 +624,10 @@ input:checked + .larq-slider:before {
       <!-- Split Hero Cards (Resumo do Motorista - Adaptativo) -->
       <div class="max-w-6xl mx-auto px-4 md:px-6 pb-5 pt-1 relative">
         
-        <!-- Botão Circular Flutuante com Ícone Raio (Apenas Mobile) -->
+        <!-- Botão Circular Flutuante com Ícone (Apenas Mobile) -->
         <div class="md:hidden absolute left-1/2 -top-5 transform -translate-x-1/2 z-20">
-          <div class="larq-floating-badge shadow-lg">
-            <svg class="w-6 h-6 text-[#0F2942]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
+          <div class="larq-floating-badge shadow-lg overflow-hidden">
+            <img src="./assets/icon-logo.png?v=2" alt="StopKm" class="w-full h-full object-cover rounded-full">
           </div>
         </div>
 
@@ -1367,8 +1365,8 @@ input:checked + .larq-slider:before {
 
         <!-- Cabeçalho com Logo -->
         <div class="text-center relative z-10">
-          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0F2942] shadow-lg shadow-[#0F2942]/20 mb-3.5">
-            <img src="./assets/logo.svg" alt="StopKm" class="w-8 h-8 object-contain">
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0F2942] shadow-lg shadow-[#0F2942]/20 mb-3.5 overflow-hidden">
+            <img src="./assets/icon-logo.png?v=2" alt="StopKm" class="w-full h-full object-cover">
           </div>
           <h1 class="text-2xl font-black text-[#0F2942] tracking-tight">StopKm</h1>
           <p class="text-xs font-semibold text-slate-400 mt-1" id="auth-subtitle">Acesse sua conta para gerenciar suas rotas</p>

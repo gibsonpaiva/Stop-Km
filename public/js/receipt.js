@@ -52,10 +52,8 @@ export function renderReceiptCard(period = 'this_month', startDate = '', endDate
       <!-- Cabeçalho do Comprovante -->
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
         <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-xl bg-[#0F2942] flex items-center justify-center text-white">
-            <svg class="w-5 h-5 text-[#25A4DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
+          <div class="w-9 h-9 rounded-xl bg-[#0F2942] flex items-center justify-center text-white overflow-hidden">
+            <img src="./assets/icon-logo.png?v=2" alt="StopKm" class="w-full h-full object-cover">
           </div>
           <div>
             <h3 class="text-base font-bold text-[#0F2942] flex items-center gap-1.5 leading-tight">

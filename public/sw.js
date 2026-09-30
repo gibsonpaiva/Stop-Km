@@ -3,7 +3,7 @@
  * Compatível com iOS Safari / WebKit e Vercel CleanUrls
  */
 
-const CACHE_NAME = 'stopkm-cache-v8';
+const CACHE_NAME = 'stopkm-cache-v10';
 const ASSETS_TO_CACHE = [
   '/',
   './manifest.json',
@@ -15,6 +15,7 @@ const ASSETS_TO_CACHE = [
   './js/charts.js',
   './js/receipt.js',
   './js/supabase.js',
+  './assets/icon-logo.png?v=2',
   './assets/logo.svg',
   './assets/icons/icon.svg'
 ];
